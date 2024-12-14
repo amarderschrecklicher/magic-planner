@@ -18,6 +18,5 @@ export const fetchFonts = () => {
     Tahoma: require('../assets/fonts/tahoma.ttf'),
     'Times New Roman': require('../assets/fonts/times.ttf'),
     'Trebuchet MS': require('../assets/fonts/trebuc.ttf'),
-    // Add more custom fonts if needed
   });
 };

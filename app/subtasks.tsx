@@ -13,7 +13,7 @@ import CurrentDate from "../components/CurrentDate";
 import { SubTaskData, updateStartedTask } from "../modules/fetchingData";
 
 
-export default function SubTasksScreen({navigation, route }:{navigation:any,route:any}) {
+function SubTasksScreen({navigation, route }:{navigation:any,route:any}) {
   const { task } = route.params;
   const { settings } = route.params;
   const { subTasks } = route.params;
@@ -127,3 +127,5 @@ const styles = StyleSheet.create({
     margin: 20,
   },
 });
+
+export default SubTasksScreen;

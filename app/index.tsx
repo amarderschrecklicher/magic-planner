@@ -1,54 +1,48 @@
-import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import LoadingAnimation from "../components/LoadingAnimation";
-import { fetchFonts } from '../modules/fontLoader';
-import AppNavigator from '../navigation/AppNavigator';
-import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/modules/firebase";
-import registerNNPushToken, { registerIndieID } from "native-notify";
+import registerNNPushToken from "native-notify";
+import { router } from "expo-router";
+import  { auth }  from "../modules/firebase";
+import LoadingAnimation from "../components/LoadingAnimation";
+import { fetchFonts } from "../modules/fontLoader";
+import React from "react";
+import HomeScreen from "./home";
+import { useUser } from "@/modules/UserContext";
 
-export default function App() {
-  const [accountID, setAccountID] = useState<number | null>(null);
-  const [email,setEmail]=useState("")
-  registerNNPushToken(22259, 'xldIGxZI7b0qgDgbFDRgUP');
-  
-  const getData = async () => {
-    try {
-      const value = await AsyncStorage.getItem("account");
-      const email = await AsyncStorage.getItem("email");
-      if(email)
-      setEmail(email)
-      const password = await AsyncStorage.getItem("password");
-
-      console.log("Email u async storage: " + email);
-      if (value && email && password) {
-        const id = parseInt(value);
-        setAccountID(id);        
-        await signInWithEmailAndPassword(auth, email, password);
-        console.log("Login success");
-      } else setAccountID(0);
-    } catch (e) {
-      console.log("Error when geting data: " + e);
-    }
-  };
+ function Index() {
+  const [ready, setReady] = useState(false);
+  const { setUser } = useUser();
 
   useEffect(() => {
-    fetchFonts();
-    getData();
+    const bootstrap = async () => {
+      console.log("Bootstrapping application...");
+      await fetchFonts();
+      console.log("Fonts loaded successfully");
+      try {
+        const account = await AsyncStorage.getItem("account");
+        const email = await AsyncStorage.getItem("email");
+        const password = await AsyncStorage.getItem("password");
 
+        if (account && email && password) {
+          console.log("Account found, logging in...",account, " ", email);
+          await signInWithEmailAndPassword(auth, email, password);
+          setUser(account, email);
+          router.replace("/(tabs)/tasks");
+        } else {
+          setReady(true);
+        }
+      } catch (e) {
+        console.log("Error:", e);
+        setReady(true);
+      }
+    };
+
+    bootstrap();
   }, []);
 
-  if (accountID == null) return <LoadingAnimation />;
-  else {
-    return (
-      <>
-        <StatusBar hidden />
-        <AppNavigator accountID={accountID} email={email}/>
-      </>
-    );
-  }
-
+  if (!ready) return <LoadingAnimation />;
+  return <HomeScreen />;
 }
+
+export default Index;

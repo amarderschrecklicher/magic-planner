@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Alert, Modal, Button, Image } from "react-nativ
 import Checkbox from "expo-checkbox";
 import { CameraView } from "expo-camera";
 import { saveMaterial } from '../modules/fetchingData';
-import { storage } from '../modules/firebase';
+import { storage } from "../modules/firebase";
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { SettingsData, SubTaskData, updateFinishedSubTasks } from "../modules/fetchingData";
 import * as ImageManipulator from "expo-image-manipulator";

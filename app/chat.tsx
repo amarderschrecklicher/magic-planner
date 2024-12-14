@@ -8,16 +8,19 @@ import {
   onSnapshot,
   serverTimestamp
 } from 'firebase/firestore';
-import { database } from '../modules/firebase';
+import { database } from "../modules/firebase";
 import ChatHeader from '../components/ChatHeader';
 import { FontAwesome } from '@expo/vector-icons';
 import {StatusBar} from "expo-status-bar";
+import { useUser } from '@/modules/UserContext';
+import { useLocalSearchParams } from 'expo-router';
 
-export default function ChatScreen({navigation, route }:{navigation:any,route:any}) {
+function ChatScreen() {
 
   const [messages, setMessages] = useState([]);
-  const { email, sos, accountID } = route.params;
+  const { sos } = useLocalSearchParams();
   const [newMessage, setNewMessage] = useState(sos === "SOS" ? "SOS: POMOĆ POTREBNA!" : "");
+  const { accountID, email } = useUser();
 
   useEffect(() => {
     const unsubscribe = signInAndListen();
@@ -210,3 +213,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+export default  ChatScreen;

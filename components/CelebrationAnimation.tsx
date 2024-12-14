@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import LottieView from "lottie-react-native";
+import LottieViewImport from "lottie-react-native";
+const LottieView = (LottieViewImport as any).default || LottieViewImport;
 
 export default function CelebrationAnimation({ kidName, maleKid, settings }:{ kidName:string, maleKid:Boolean, settings:any }) {
   let name = kidName;
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 60,
+
   },
   congratulation: {
     position: "absolute",

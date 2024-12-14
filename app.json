@@ -12,7 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "newArchEnabled": true, 
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.amartc.assitify"
@@ -27,9 +27,11 @@
         "android.permission.RECORD_AUDIO"
       ],
       "package": "com.amartc.assitify",
-      "googleServicesFile": "./google-services.json",
-      "useNextNotificationsApi": true
+      "googleServicesFile": "./google-services.json"
     },
+    "androidStatusBar": {
+      "translucent": true
+ },
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -38,6 +40,7 @@
     "plugins": [
       "expo-router",
       [
+
         "expo-camera",
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
@@ -52,15 +55,17 @@
           "color": "#ffffff"
         }
       ],
-      "expo-font"
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ],
+      "expo-font",
+      "expo-router"
     ],
-    "experiments": {
-      "typedRoutes": true
-    },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "176c4c21-9c62-4311-a5d2-566380f957d6"
       }

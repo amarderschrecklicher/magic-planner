@@ -14,19 +14,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import LottieView from "lottie-react-native";
 import { fetchStringCodes } from "../modules/fetchingData";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/modules/firebase";
+import { auth } from "../modules/firebase";
+import { useRouter } from "expo-router";
+import { useUser } from "@/modules/UserContext";
 
-export default function ScanQRCodeScreen({ navigation }:{ navigation:any }) {
+function ScanQRCodeScreen() {
   const [scanned, setScanned] = useState(false);
   const [stringCodes, setStringCodes] = useState([]);
-  const [isAuthenticated, setAuhenticated] = useState(false);
-  const [id, setId] = useState(0);
+  const [isAuthenticated, setAuthenticated] = useState(false);
   const [nonExistentAccount, setNonExistentAccount] = useState(false);
-  const [email,setEmail]=useState("")
+  const { accountID, email, setUser } = useUser();
 
+  const router = useRouter();
   useEffect(() => {
     fetchCodes();
-    console.log(stringCodes)
   }, []);
 
   async function fetchCodes() {
@@ -39,6 +40,7 @@ export default function ScanQRCodeScreen({ navigation }:{ navigation:any }) {
       await AsyncStorage.setItem("account", child.id.toString());
       await AsyncStorage.setItem("email", child.email);
       await AsyncStorage.setItem("password", child.password);
+      setUser(child.id.toString(), child.email);
       await signInWithEmailAndPassword(auth, child.email, child.password);
       console.log("Login success");
     } catch (e) {
@@ -46,41 +48,27 @@ export default function ScanQRCodeScreen({ navigation }:{ navigation:any }) {
     }
   };
 
-  const handleBarCodeScanned = async ({ type, data }:{ type:any, data:any }) => {
-    setScanned(true);
-    let findAccount = false;
-    console.log(stringCodes)
-    stringCodes.forEach((string: any)  => {
-      if (string.phoneLoginString == data) {
-        storeData(string.child);
-        console.log(
-          "ID koji se ubacuje u async storage: " +
-            string.child.id +
-            " i skeniran kod: " +
-            data
-        );
-        setAuhenticated(true);
-        setId(string.child.id);
-        setEmail(string.child.email)
-        findAccount = true;
-      }
-    });
 
-    if (!findAccount) setNonExistentAccount(true);
+  const handleBarCodeScanned = async ({ data }: { data: any }) => {
+    setScanned(true);
+    let found = false;
+
+    for (const string of stringCodes) {
+      if (string.phoneLoginString === data) {
+        await storeData(string.child);
+        setAuthenticated(true);
+        setUser(string.child.id.toString(), string.child.email);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) setNonExistentAccount(true);
   };
 
-  const navigationReset = () => {
-    const resetAction = CommonActions.reset({
-      index: 0,
-      routes: [
-        {
-          name: "BottomNavigator",
-          params: { accountID: id,email: email },
-        },
-      ],
-    });
-
-    navigation.dispatch(resetAction);
+  const navigateToTabs = () => {
+    console.log("Navigating to tabs with account ID:",  accountID, "and email:", email);
+    router.replace("/(tabs)/tasks");
   };
 
   if (isAuthenticated)
@@ -90,24 +78,15 @@ export default function ScanQRCodeScreen({ navigation }:{ navigation:any }) {
           source={require("../assets/animations/successfullyLogin.json")}
           autoPlay
           loop={false}
-          onAnimationFinish={navigationReset}
+          onAnimationFinish={navigateToTabs}
           style={{ width: 300, height: 300 }}
         />
         <Text style={{ fontSize: 26 }}>Uspješna prijava!</Text>
       </View>
     );
-  else if (!isAuthenticated && !nonExistentAccount)
+  if (nonExistentAccount) {
     return (
-      <SafeAreaView style={styles.container}>
-        <CameraView
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </SafeAreaView>
-    );
-  else if (!isAuthenticated && nonExistentAccount)
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.centered}>
         <LottieView
           source={require("../assets/animations/failedLogin.json")}
           autoPlay
@@ -118,7 +97,7 @@ export default function ScanQRCodeScreen({ navigation }:{ navigation:any }) {
         <Text style={{ fontSize: 22 }}>Profil ne postoji</Text>
         <TouchableOpacity
           style={styles.failedButton}
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => router.replace("/")}
         >
           <Text style={{ color: "white", fontSize: 22, fontWeight: "bold" }}>
             Ok
@@ -126,12 +105,26 @@ export default function ScanQRCodeScreen({ navigation }:{ navigation:any }) {
         </TouchableOpacity>
       </View>
     );
+  }
+  return (
+    <SafeAreaView style={styles.container}>
+      <CameraView
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        style={StyleSheet.absoluteFillObject}
+      />
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    alignItems: "center",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
   failedButton: {
@@ -146,3 +139,5 @@ const styles = StyleSheet.create({
     width: 230,
   },
 });
+
+export default ScanQRCodeScreen;

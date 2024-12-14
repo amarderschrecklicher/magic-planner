@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
     View,
     StyleSheet,
@@ -8,55 +8,52 @@ import {
     SafeAreaView,
     TouchableOpacity,
 } from "react-native";
-import Task from "../components/Task";
-import CurrentDate from "../components/CurrentDate";
-import LoadingAnimation from "../components/LoadingAnimation";
-import SideButtons from "../components/SideButtons";
+import Task from "../../components/Task";
+import CurrentDate from "../../components/CurrentDate";
+import LoadingAnimation from "../../components/LoadingAnimation";
+import SideButtons from "../../components/SideButtons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
-import { fetchTasks, fetchSettings, fetchSubTasks, fetchAccount, TaskData, SubTaskData, SettingsData } from "../modules/fetchingData";
+import { fetchTasks, fetchSettings, fetchSubTasks, fetchAccount, TaskData, SubTaskData, SettingsData } from "../../modules/fetchingData";
 import { StatusBar } from "expo-status-bar";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useUser } from "@/modules/UserContext";
 
-export default function ProgressScreen({ navigation, route }: { navigation: any, route: any }) {
+function ProgressScreen() {
     const [finishedTasks, setFinishedTasks] = useState<TaskData[] | null>(null);
     const [subTasks, setSubTasks] = useState<Map<number, SubTaskData[]> | null>(null);
     const [settings, setSettings] = useState<SettingsData | null>(null);
     const [refreshing, setRefreshing] = useState(false);
-    const [email, setEmail] = useState("");
-    const { accountID } = route.params;
+    const { accountID, email } = useUser();
 
-    useEffect(() => {
+  useFocusEffect(
+    useCallback(() => {
+        console.log("TasksScreen focused, fetching data...");
         fetchData(false);
 
-        const unsubscribe = navigation.addListener("focus", () => {
-            fetchData(false);
-        });
-
         return () => {
-            unsubscribe();
+      
         };
-    }, [navigation]);
+    }, [])
+);
 
-    async function fetchData(refresh: boolean) {
+    async function 
+    fetchData(refresh: boolean) {
         try {
-            const employeeData = await fetchAccount(accountID);
-            if (employeeData) {
-                setEmail(employeeData.email);
-            }
+            await fetchAccount(accountID);
             const tasksData = await fetchTasks(accountID);
             if (tasksData) {
-                const completedTasks = tasksData.finished;
-                setFinishedTasks(completedTasks);
+                setFinishedTasks(tasksData.finished);
 
                 const subtasksData = await fetchSubTasks(tasksData ? tasksData.data : []);
 
-                if(subtasksData)
-                  setSubTasks(subtasksData);
+                if (subtasksData)
+                    setSubTasks(subtasksData);
             }
 
             const settingsData = await fetchSettings(accountID);
 
-            if(settingsData)  
-              setSettings(settingsData);
+            if (settingsData)
+                setSettings(settingsData);
         } catch (error) {
             console.error("Failed to fetch data in ProgressScreen:", error);
         }
@@ -79,20 +76,16 @@ export default function ProgressScreen({ navigation, route }: { navigation: any,
             });
     };
 
-    const handleChatPress = () => {
-        navigation.navigate("Chat", {
-            email: email,
-            accountID: accountID
-        });
-    };
+  const handleChatPress = () => {
+    router.push("chat");
+  };
 
-    const handleSOSPress = () => {
-        navigation.navigate("Chat", {
-            sos: "SOS",
-            email: email,
-            accountID: accountID
-        });
-    };
+  const handleSOSPress = () => {
+    router.push({
+      pathname: "chat",
+      params: { sos: "SOS" },
+    });
+  };
 
     if (!finishedTasks || !subTasks || !settings) {
         return <LoadingAnimation />;
@@ -116,25 +109,26 @@ export default function ProgressScreen({ navigation, route }: { navigation: any,
             </Text>
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+                />}
+                contentContainerStyle={{
+                    paddingBottom: 100, // Add enough padding for the progress bar and bottom bar
+                }}
             >
                 <View style={styles.verticalTasks}>
                     {finishedTasks.map((task) => {
                         if (!subTasks.get(task.id)) return null;
                         return (
                             <View key={task.id} style={styles.taskItem}>
-                                <TouchableOpacity
-                                    activeOpacity={0.6}
-                                    style={styles.taskPressable}
-                                    onPress={() => handleTaskPress(task)}
-                                >
+                                <View style={styles.taskPressable}>
                                     <Task
                                         task={task}
                                         settings={settings}
                                         taskColor={settings.colorOfPriorityTask}
                                         subTasks={subTasks.get(task.id)}
+                                        updateTaskScreen={fetchData}
                                     />
-                                </TouchableOpacity>
+                                </View>
                             </View>
                         );
                     })}
@@ -152,23 +146,25 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         padding: 15,
-      },
-      verticalTasks: {
+    },
+    verticalTasks: {
         flexDirection: "column",
         alignItems: "center",
         marginBottom: 20,
-      },
-      taskItem: {
+    },
+    taskItem: {
         width: "90%",
         marginBottom: 15,
-      },
-      title: {
+    },
+    title: {
         fontSize: 24,
         textAlign: "center",
         marginBottom: 10,
         marginTop: 40,
-      },
-      taskPressable: {
+    },
+    taskPressable: {
         width: "100%",
-      },
+    },
 });
+
+export default ProgressScreen;
