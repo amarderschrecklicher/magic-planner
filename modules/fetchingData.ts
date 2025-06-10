@@ -178,7 +178,6 @@ export async function fetchSettings(accountID:number): Promise<SettingsData | un
 export async function updateFinishedSubTasks(id:number,done:boolean | null) {
   try {
 
-
     await fetch(`${API_BASE_URL}/api/v1/task/sub/done/${id}`, {
       method: "PUT",
       headers: {
@@ -194,7 +193,6 @@ export async function updateFinishedSubTasks(id:number,done:boolean | null) {
 }
 
 export async function updateFinishedTask(id:number) {
-  try {    console.log("uso")
   try {    console.log("uso")
     await fetch(`${API_BASE_URL}/api/v1/task/done/${id}`, {
       method: "PUT",
