@@ -285,7 +285,7 @@ useEffect(() => {
   style={{ flex: 1 }}
 >
         <SafeAreaView
-          style={{ flex: 1 }}
+          style={{ flex: 1}}
         >
             <UnifiedHeader
               settings={settings}
@@ -299,7 +299,7 @@ useEffect(() => {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             contentContainerStyle={{
-              paddingBottom: 100, // Add enough padding for the progress bar and bottom bar
+              paddingBottom: 100
             }}
           ><WelcomeMessage name={kidName} male={maleKid} settings={settings} />
             {priorityTasks.length != 0 ? (
@@ -326,7 +326,7 @@ useEffect(() => {
                     {priorityTasks.map((task) => {
                       if (!subTasks.get(task.id)) return null;
                       return (
-                        <View key={task.id}>
+                        <View key={task.id} style={{ marginBottom: 40 }}>
                           <TouchableOpacity
                             activeOpacity={0.6}
                             style={styles.taskPressable}
@@ -372,7 +372,7 @@ useEffect(() => {
                     {normalTasks.map((task) => {
                       if (!subTasks.get(task.id)) return null;
                       return (
-                        <View key={task.id}>
+                        <View key={task.id} style={{ marginBottom: 40 }}>
                           <TouchableOpacity
                             activeOpacity={0.6}
                             style={styles.taskPressable}
@@ -405,14 +405,7 @@ useEffect(() => {
 const styles = StyleSheet.create({
   tasks: {
     paddingBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    marginLeft: 25,
-    marginBottom: 10,
-    marginTop: 20,
-    fontWeight: "600",
-    color: "#333",
+    marginTop: 10,
   },
   taskPressable: {
     width: 280,
@@ -425,6 +418,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    marginBottom: 40, // ili više
+
   },
   congratulationBox: {
     flex: 1,

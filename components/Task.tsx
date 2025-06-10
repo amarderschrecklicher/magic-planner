@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
     elevation: 6,
     minHeight: 180,
     justifyContent: "space-between",
+    overflow: "visible",
   },
   taskName: {
     fontSize: 24,
