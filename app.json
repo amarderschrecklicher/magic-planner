@@ -13,6 +13,7 @@
       "backgroundColor": "#ffffff"
     },
     "newArchEnabled": true,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.amartc.assitify"
