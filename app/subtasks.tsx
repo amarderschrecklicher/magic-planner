@@ -10,17 +10,31 @@ import {
 import SubTask from "../components/SubTask";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CurrentDate from "../components/CurrentDate";
-import { SubTaskData, updateStartedTask } from "../modules/fetchingData";
+import { useMemo } from "react";
+import { SettingsData, SubTaskData, TaskData, updateStartedTask } from "../modules/fetchingData";
 import { useLocalSearchParams, router } from "expo-router";
 
 function SubTasksScreen() {
-  const { task, settings, subTasks } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+
+  const task: TaskData = params.task ? JSON.parse(params.task as string) : null;
+  const settings: SettingsData = params.settings ? JSON.parse(params.settings as string) : null;
+  const subTasks: SubTaskData[] = useMemo(() => {
+  if (!params.subTasks) return [];
+  try {
+    return JSON.parse(params.subTasks as string);
+  } catch (e) {
+    console.warn("Failed to parse subTasks:", e);
+    return [];
+  }
+}, [params.subTasks]);
   const [sortedSubTasks, setSortedSubTasks] = useState<SubTaskData[]>([]);
   const [started, setStarted] = useState(
     task?.start !== null && task?.start !== "Invalid date"
   );
 
   useEffect(() => {
+    console.log("SubTasksScreen useEffect called with subTasks:",  task.task);
     if (!task || !settings || !subTasks) return;
     sortSubTasks();
   }, [subTasks]);

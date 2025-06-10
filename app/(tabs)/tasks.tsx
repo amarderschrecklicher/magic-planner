@@ -232,17 +232,6 @@ useEffect(() => {
       });
   };
 
-  const handleChatPress = () => {
-    router.push("chat");
-  };
-
-  const handleSOSPress = () => {
-    router.push({
-      pathname: "chat",
-      params: { sos: "SOS" }, 
-    });
-  };
-
 
   if (
     subTasks == null ||
@@ -289,22 +278,20 @@ useEffect(() => {
     );
   else {
     return (
-      <LinearGradient
-        colors={["#B7F2F2", settings.colorForBackground]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }} 
-        style={{ flex: 1 }}
-      >
+<LinearGradient
+  colors={BACKGROUND_GRADIENT}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 0, y: 1 }}
+  style={{ flex: 1 }}
+>
         <SafeAreaView
           style={{ flex: 1 }}
         >
-          <View style={styles.header}>
-            <CurrentDate settings={settings} />
-            <TouchableOpacity style={styles.logoutButton} onPress={alertFunction}>
-              <SimpleLineIcons name="logout" size={33}></SimpleLineIcons>
-            </TouchableOpacity>
-
-          </View>
+            <UnifiedHeader
+              settings={settings}
+              title="Zadaci"
+              onLogout={alertFunction}
+            />
           
           <ScrollView
             showsVerticalScrollIndicator={false}
