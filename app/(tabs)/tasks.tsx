@@ -34,7 +34,6 @@ import * as Notifications from 'expo-notifications';
 import { Notification, NotificationResponse } from 'expo-notifications';
 import * as Device from 'expo-device';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import SideButtons from "../../components/SideButtons";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { useUser } from "@/modules/UserContext";
@@ -223,10 +222,13 @@ useEffect(() => {
 
   const handleTaskPress = (task: any) => {
     if (subTasks)
-      router.push("subtasks", {
-        task: task,
-        settings: settings,
-        subTasks: subTasks.get(task.id),
+      router.push({
+        pathname: "subtasks",
+        params: {
+          task: JSON.stringify(task),
+          settings: JSON.stringify(settings),
+          subTasks: JSON.stringify(subTasks.get(task.id)),
+        },
       });
   };
 
@@ -282,7 +284,6 @@ useEffect(() => {
             />
             <CelebrationAnimation kidName={kidName} maleKid={maleKid} settings={settings} />
           </ScrollView>
-          <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
         </SafeAreaView>
       </LinearGradient>
     );
@@ -408,7 +409,6 @@ useEffect(() => {
               </>
             ) : undefined}
           </ScrollView>
-          <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
         </SafeAreaView>
       </LinearGradient>
     );

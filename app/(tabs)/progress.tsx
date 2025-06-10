@@ -131,8 +131,6 @@ function ProgressScreen() {
         );
       })}
     </ScrollView>
-
-    <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
   </SafeAreaView>
 </LinearGradient>
     )
@@ -142,15 +140,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  title: {
-    textAlign: "center",
-    marginBottom: 15,
-    color: "#2c3e50",
-    fontWeight: "bold",
-  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 120,
+    marginTop: 10,
   },
   taskCard: {
     backgroundColor: "#ffffff",

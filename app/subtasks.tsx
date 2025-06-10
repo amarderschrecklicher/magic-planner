@@ -11,60 +11,64 @@ import SubTask from "../components/SubTask";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CurrentDate from "../components/CurrentDate";
 import { SubTaskData, updateStartedTask } from "../modules/fetchingData";
+import { useLocalSearchParams, router } from "expo-router";
 
-
-function SubTasksScreen({navigation, route }:{navigation:any,route:any}) {
-  const { task } = route.params;
-  const { settings } = route.params;
-  const { subTasks } = route.params;
-  const [sortedSubTasks, setSortedSubTasks] = useState<SubTaskData[] | null>(null);
-  const [started, setStarted] = useState(task.start !== null && task.start !== "Invalid date");
+function SubTasksScreen() {
+  const { task, settings, subTasks } = useLocalSearchParams();
+  const [sortedSubTasks, setSortedSubTasks] = useState<SubTaskData[]>([]);
+  const [started, setStarted] = useState(
+    task?.start !== null && task?.start !== "Invalid date"
+  );
 
   useEffect(() => {
+    if (!task || !settings || !subTasks) return;
     sortSubTasks();
-  }, []);
+  }, [subTasks]);
 
   const sortSubTasks = () => {
-    const temp = [...subTasks];
-    temp.sort(function (a:any, b:any) {
+    const parsed = Array.isArray(subTasks) ? subTasks : JSON.parse(subTasks);
+    const temp = [...parsed];
+    temp.sort((a: any, b: any) => {
       if (a.done && !b.done) return 1;
       if (!a.done && b.done) return -1;
-      return 1
+      return 0;
     });
     setSortedSubTasks(temp);
   };
 
   const handleStartTask = () => {
     setStarted(true);
-    updateStartedTask(task.id)
+    updateStartedTask(task.id);
   };
 
-  const buttonText = started ? `Zadatak započet${task.start ? `: ${task.start}` : ''}` : "Započni zadatak";
+  const buttonText = started
+    ? `Zadatak započet${task.start ? `: ${task.start}` : ""}`
+    : "Započni zadatak";
 
   return (
     <SafeAreaView style={{ backgroundColor: settings.colorForBackground, flex: 1 }}>
       <View>
         <CurrentDate settings={settings} />
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={50} />
         </TouchableOpacity>
       </View>
-      <Text style={[styles.title, { fontSize: settings.fontSize + 2, fontFamily: settings.font }]}>
-        Opis zadatka
-      </Text>
+
+      <Text style={[styles.title, { fontSize: settings.fontSize + 2, fontFamily: settings.font }]}>Opis zadatka</Text>
+
       <View style={styles.description}>
         <Text style={{ fontSize: settings.fontSize, fontFamily: settings.font }}>
           {task.description}
         </Text>
       </View>
-      <Text style={[styles.title, { fontSize: settings.fontSize + 2, fontFamily: settings.font }]}>
-        Podzadaci
-      </Text>
+
+      <Text style={[styles.title, { fontSize: settings.fontSize + 2, fontFamily: settings.font }]}>Podzadaci</Text>
+
       <ScrollView style={styles.scroller}>
         {sortedSubTasks?.map((subTask) => (
           <View key={subTask.id}>
             <SubTask
-              started = {started}
+              started={started}
               subTask={subTask}
               subTaskColor={task.priority ? settings.colorOfPriorityTask : settings.colorOfNormalTask}
               settings={settings}
@@ -72,6 +76,7 @@ function SubTasksScreen({navigation, route }:{navigation:any,route:any}) {
           </View>
         ))}
       </ScrollView>
+
       <TouchableOpacity
         style={started ? styles.startButtonDisabled : styles.startButton}
         onPress={handleStartTask}
