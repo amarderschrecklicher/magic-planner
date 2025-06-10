@@ -17,6 +17,9 @@ import { fetchTasks, fetchSettings, fetchSubTasks, fetchAccount, TaskData, SubTa
 import { StatusBar } from "expo-status-bar";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useUser } from "@/modules/UserContext";
+import { LinearGradient } from "expo-linear-gradient";
+import UnifiedHeader from "@/components/UnifiedHeader";
+import { BACKGROUND_GRADIENT } from '../../constants/Colors';
 
 function ProgressScreen() {
     const [finishedTasks, setFinishedTasks] = useState<TaskData[] | null>(null);
@@ -92,79 +95,75 @@ function ProgressScreen() {
     }
 
     return (
-        <SafeAreaView style={{ backgroundColor: settings.colorForBackground, flex: 1 }}>
-            <View style={styles.header}>
-                <CurrentDate settings={settings} />
-            </View>
-            <Text
-                style={[
-                    styles.title,
-                    {
-                        fontSize: settings.fontSize + 2,
-                        fontFamily: settings.font,
-                    },
-                ]}
-            >
-                Završeni zadaci
-            </Text>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh}
-                />}
-                contentContainerStyle={{
-                    paddingBottom: 100, // Add enough padding for the progress bar and bottom bar
-                }}
-            >
-                <View style={styles.verticalTasks}>
-                    {finishedTasks.map((task) => {
-                        if (!subTasks.get(task.id)) return null;
-                        return (
-                            <View key={task.id} style={styles.taskItem}>
-                                <View style={styles.taskPressable}>
-                                    <Task
-                                        task={task}
-                                        settings={settings}
-                                        taskColor={settings.colorOfPriorityTask}
-                                        subTasks={subTasks.get(task.id)}
-                                        updateTaskScreen={fetchData}
-                                    />
-                                </View>
-                            </View>
-                        );
-                    })}
-                </View>
-            </ScrollView>
-            <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
-            <StatusBar style="auto" translucent={true} hidden={false} backgroundColor={settings.colorForBackground} />
-        </SafeAreaView>
-    );
+<LinearGradient
+  colors={BACKGROUND_GRADIENT}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 0, y: 1 }}
+  style={{ flex: 1 }}
+>
+
+  <SafeAreaView style={styles.container}>
+    <StatusBar style="dark" translucent={true} hidden={false} backgroundColor="transparent" />
+    
+    <UnifiedHeader
+        settings={settings}
+        title="Završeni zadaci"
+    />
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {finishedTasks.map((task) => {
+        const subTaskList = subTasks.get(task.id);
+        if (!subTaskList) return null;
+
+        return (
+          <View key={task.id} style={styles.taskCard}>
+            <Task
+              task={task}
+              settings={settings}
+              taskColor={settings.colorOfPriorityTask}
+              subTasks={subTaskList}
+              updateTaskScreen={fetchData}
+            />
+          </View>
+        );
+      })}
+    </ScrollView>
+
+    <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
+  </SafeAreaView>
+</LinearGradient>
+    )
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 15,
-    },
-    verticalTasks: {
-        flexDirection: "column",
-        alignItems: "center",
-        marginBottom: 20,
-    },
-    taskItem: {
-        width: "90%",
-        marginBottom: 15,
-    },
-    title: {
-        fontSize: 24,
-        textAlign: "center",
-        marginBottom: 10,
-        marginTop: 40,
-    },
-    taskPressable: {
-        width: "100%",
-    },
+  container: {
+    flex: 1,
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: 15,
+    color: "#2c3e50",
+    fontWeight: "bold",
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 120,
+  },
+  taskCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 3,
+  },
 });
+
 
 export default ProgressScreen;

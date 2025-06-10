@@ -36,10 +36,10 @@ import * as Device from 'expo-device';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import SideButtons from "../../components/SideButtons";
 import { StatusBar } from "expo-status-bar";
-import { registerIndieID, unregisterIndieDevice } from "native-notify";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams } from "expo-router";
 import { useUser } from "@/modules/UserContext";
+import UnifiedHeader from "@/components/UnifiedHeader";
+import { BACKGROUND_GRADIENT } from '../../constants/Colors';
 
 function TasksScreen() {
 
@@ -55,7 +55,6 @@ function TasksScreen() {
   const [subTasks, setSubTasks] = useState<Map<number, SubTaskData[]> | null>(null);
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [storedToken, setStoredToken] = useState("no");
   const { accountID, email } = useUser();
 
   Notifications.setNotificationHandler({
@@ -78,27 +77,34 @@ function TasksScreen() {
 }, []);
 
   // Update the database with the new token if necessary
-    useEffect(() => {
+  useEffect(() => {
+    const updateOrAddToken = async () => {
+      let storedToken = await AsyncStorage.getItem("expo_token");
       console.log("expoPushToken:", expoPushToken);
-      console.log("storedToken:", storedToken.token);
+      console.log("storedToken:", storedToken);
 
-    if (expoPushToken !== "" && expoPushToken != storedToken) {
+      if ( expoPushToken !== "" && expoPushToken != storedToken) {
         console.log("Token updatean!")
+        await AsyncStorage.setItem("expo_token", expoPushToken);
         updateToken(expoPushToken, accountID);
-      }  
-    else if (expoPushToken=="" && storedToken == undefined) {
+      }
+      else if ((storedToken == undefined && expoPushToken == "") || (expoPushToken !== "" && storedToken == null)) {
         console.log("Adding new token!");
         addToken(expoPushToken, accountID, Device.modelName || "");
+        await AsyncStorage.setItem("expo_token", expoPushToken);
         console.log("Token added successfully!");
-    }
-  }, [expoPushToken, storedToken, accountID]);
+      }
+    };
+
+    updateOrAddToken();
+  }, [expoPushToken, accountID]);
 
   useEffect(() => {
     const getStoredToken = async () => {
       console.log("Fetching stored token for account ID:", accountID);
       const { token } = await fetchTokens(accountID);
       console.log("Stored token fetched:", token.token);
-      setStoredToken(token);
+      await AsyncStorage.setItem("expo_token", expoPushToken);
     };
 
     getStoredToken();
@@ -207,6 +213,7 @@ useEffect(() => {
       await AsyncStorage.removeItem("account");
       await AsyncStorage.removeItem("email");
       await AsyncStorage.removeItem("password");
+      await AsyncStorage.removeItem("expo_token");
       router.replace({ pathname: "/" });
 //
     } catch (e) {
@@ -216,7 +223,7 @@ useEffect(() => {
 
   const handleTaskPress = (task: any) => {
     if (subTasks)
-      navigation.navigate("SubTasks", {
+      router.push("subtasks", {
         task: task,
         settings: settings,
         subTasks: subTasks.get(task.id),
@@ -250,12 +257,14 @@ useEffect(() => {
     subTasks.size == 0
   )
     return (
-      <LinearGradient
-        colors={["#FFD700", settings.colorForBackground, "#00457C"]}
-        start={{ x: 0, y: 0 }} // Start at the top
-        end={{ x: 1, y: 0 }} // End at the bottom
-        style={{ flex: 1 }}
-      >
+<LinearGradient
+  colors={BACKGROUND_GRADIENT}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 0, y: 1 }}
+  style={{ flex: 1 }}
+>
+
+
         <SafeAreaView style={{ flex: 1 , marginBottom: 20}}>
           <StatusBar style="auto"
             translucent={true}
@@ -266,12 +275,11 @@ useEffect(() => {
           <ScrollView
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           >
-            <View>
-              <CurrentDate settings={settings} />
-              <TouchableOpacity style={styles.logoutButton} onPress={alertFunction}>
-                <SimpleLineIcons name="logout" size={40}></SimpleLineIcons>
-              </TouchableOpacity>
-            </View>
+            <UnifiedHeader
+              settings={settings}
+              title="Zadaci"
+              onLogout={alertFunction}
+            />
             <CelebrationAnimation kidName={kidName} maleKid={maleKid} settings={settings} />
           </ScrollView>
           <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
@@ -409,29 +417,27 @@ useEffect(() => {
 
 const styles = StyleSheet.create({
   tasks: {
-
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     marginLeft: 25,
     marginBottom: 10,
     marginTop: 20,
-    fontWeight: "bold"
+    fontWeight: "600",
+    color: "#333",
   },
   taskPressable: {
     width: 280,
     marginLeft: 25,
+    marginRight: 10,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   congratulationBox: {
     flex: 1,
@@ -440,31 +446,32 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   congratulationsText: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "bold",
-  },
-  logoutButton: {
-    marginTop: 15,
-    marginLeft: 15,
+    color: "#2e7d32",
   },
   container: {
     flex: 1,
-    // Add other styles for your main content container if needed
+    backgroundColor: "#f9f9f9",
   },
   buttonContainer: {
-    position: 'absolute', // Position the container absolutely
-    bottom: 16, // Adjust the bottom spacing as needed
-    right: 16, // Adjust the right spacing as needed
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
   },
   button: {
-    backgroundColor: 'blue', // Set the background color of the button
-    width: 64, // Set the width and height to make it circular
-    height: 64,
-    borderRadius: 32, // Set half of the width to make it circular
-    alignItems: 'center', // Center the icon horizontally
-    justifyContent: 'center', // Center the icon vertically
-    // Add other styles for the button if needed
+    backgroundColor: '#007AFF',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
 });
+
 
 export default TasksScreen;

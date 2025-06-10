@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 12,
-      paddingTop: Platform.OS === 'ios' ? screenHeight * 0.01 : screenHeight * 0.01,
+      paddingTop: Platform.OS === 'ios' ? screenHeight * 0.04 : screenHeight * 0.03,
       paddingBottom: screenHeight * 0.01,
       backgroundColor: '#fff',
       borderBottomWidth: 1,

@@ -17,7 +17,7 @@ export default function CurrentDate({ settings }:{settings:SettingsData}) {
     <View
       style={{
         position: "absolute",
-        top: 20,
+        top: 30,
         right: 20,
       }}
     >

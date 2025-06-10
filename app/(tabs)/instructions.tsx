@@ -21,15 +21,15 @@ import {
   fetchSettings,
   SettingsData
 } from "../../modules/fetchingData";
-import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
-import CurrentDate from '../../components/CurrentDate';
-import SideButtons from '../../components/SideButtons';
 import LoadingAnimation from '../../components/LoadingAnimation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import UnifiedHeader from '@/components/UnifiedHeader';
+import { BACKGROUND_GRADIENT } from '../../constants/Colors';
+import { useUser } from '@/modules/UserContext';
 
 const MaterialsScreen = ({ navigation, route }: { navigation: any, route: any }) => {
   const [materials, setMaterials] = useState([]);
@@ -37,8 +37,8 @@ const MaterialsScreen = ({ navigation, route }: { navigation: any, route: any })
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [settings, setSettings] = useState(null);
-   const router = useRouter();
-  const { accountID, email } = useLocalSearchParams();
+  const router = useRouter();
+  const { accountID, email } = useUser();
 
   useEffect(() => {
     fetchData();
@@ -115,32 +115,6 @@ const MaterialsScreen = ({ navigation, route }: { navigation: any, route: any })
     </TouchableOpacity>
   );
 
-  const alertFunction = () => {
-    Alert.alert(
-      'Da li ste sigurni da se želite odjaviti?',
-      'Ako se odjavite ponovo ćete morati skenirati QR kod kako biste se prijavili.',
-      [
-        {
-          text: 'Ne',
-          onPress: undefined,
-          style: 'cancel',
-        },
-        {
-          text: 'Da',
-          onPress: logout,
-        },
-      ]
-    );
-  };
-
-  const logout = async () => {
-    try {
-      await AsyncStorage.removeItem('account');
-      router.replace({ pathname: '/' });
-    } catch (e) {
-      console.log('Error when logging out:', e);
-    }
-  };
 
   if (!settings) {
     return <LoadingAnimation />;
@@ -151,31 +125,77 @@ const MaterialsScreen = ({ navigation, route }: { navigation: any, route: any })
   const pdfMaterials = materials.filter(material => material.contentType === 'application/pdf');
 
   return (
-    <LinearGradient
-      colors={["#B7F2F2", settings.colorForBackground]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={{ flex: 1 }}
-    >
+<LinearGradient
+  colors={BACKGROUND_GRADIENT}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 0, y: 1 }}
+  style={{ flex: 1 }}
+>
+
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <CurrentDate settings={settings} />
-          <TouchableOpacity style={styles.logoutButton} onPress={alertFunction}>
-            <SimpleLineIcons name="logout" size={33}></SimpleLineIcons>
-          </TouchableOpacity>
-        </View>
+        <UnifiedHeader
+           settings={settings}
+            title="Materijali"
+        />
+
+
         <FlatList
           contentContainerStyle={{ paddingBottom: 100 }}
           ListHeaderComponent={() => (
-            <>
-              <Text style={[styles.sectionTitle, { fontSize: settings.fontSize + 6, fontFamily: settings.font }]}>Instrukcije</Text>
-              <Text style={[styles.sectionTitle, { fontSize: settings.fontSize, fontFamily: settings.font }]}>Slike</Text>
-              <FlatList data={imageMaterials} renderItem={renderImageOrVideo} keyExtractor={item => item.id} horizontal showsHorizontalScrollIndicator={false} style={{ marginLeft: 15 }} />
-              <Text style={[styles.sectionTitle, { fontSize: settings.fontSize, fontFamily: settings.font, marginTop: 25 }]}>Videozapisi</Text>
-              <FlatList data={videoMaterials} renderItem={renderImageOrVideo} keyExtractor={item => item.id} horizontal showsHorizontalScrollIndicator={false} style={{ marginLeft: 15 }} />
-              <Text style={[styles.sectionTitle, { fontSize: settings.fontSize, fontFamily: settings.font, marginTop: 25 }]}>PDF dokumenti</Text>
-              <FlatList data={pdfMaterials} renderItem={renderPDF} keyExtractor={item => item.id} horizontal showsVerticalScrollIndicator={false} style={{ marginLeft: 15 }} />
-            </>
+<>
+  <Text style={[styles.sectionHeader, { fontSize: settings.fontSize + 6, fontFamily: settings.font }]}>
+    Instrukcije
+  </Text>
+
+  {imageMaterials.length > 0 && (
+    <>
+      <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
+        Slike
+      </Text>
+      <FlatList
+        data={imageMaterials}
+        renderItem={renderImageOrVideo}
+        keyExtractor={item => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+      />
+    </>
+  )}
+
+  {videoMaterials.length > 0 && (
+    <>
+      <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
+        Videozapisi
+      </Text>
+      <FlatList
+        data={videoMaterials}
+        renderItem={renderImageOrVideo}
+        keyExtractor={item => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+      />
+    </>
+  )}
+
+  {pdfMaterials.length > 0 && (
+    <>
+      <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
+        PDF dokumenti
+      </Text>
+      <FlatList
+        data={pdfMaterials}
+        renderItem={renderPDF}
+        keyExtractor={item => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalList}
+      />
+    </>
+  )}
+</>
+
           )}
           data={[]}
           renderItem={null}
@@ -211,23 +231,32 @@ const MaterialsScreen = ({ navigation, route }: { navigation: any, route: any })
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 15,
-  },
-  logoutButton: {
-    marginTop: 5,
-    marginLeft: 15,
-    marginBottom: 15,
-  },
   materialBox: {
     marginBottom: 15,
     alignItems: 'center',
     padding: 15,
   },
+  sectionHeader: {
+  fontSize: 24,
+  fontWeight: '700',
+  marginTop: 20,
+  marginBottom: 10,
+  marginLeft: 20,
+  color: '#2c3e50',
+},
+subsectionTitle: {
+  fontSize: 18,
+  fontWeight: '600',
+  marginBottom: 10,
+  marginTop: 15,
+  marginLeft: 20,
+  color: '#333',
+},
+horizontalList: {
+  paddingHorizontal: 15,
+  paddingBottom: 10,
+},
+
   materialImage: {
     width: '100%',
     height: 150,
@@ -251,7 +280,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(226, 213, 213, 0.8)',
   },
   closeButton: {
     position: 'absolute',

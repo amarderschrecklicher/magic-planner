@@ -14,6 +14,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import {StatusBar} from "expo-status-bar";
 import { useUser } from '@/modules/UserContext';
 import { useLocalSearchParams } from 'expo-router';
+import { Keyboard, TouchableWithoutFeedback } from 'react-native';
 
 function ChatScreen() {
 
@@ -79,10 +80,11 @@ const onSendMessage = async (e:any) => {
 };
 
 return (
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
   <KeyboardAvoidingView
     style={styles.container}
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : -60}
   >
   <StatusBar style="dark"
     translucent={true}
@@ -117,9 +119,11 @@ return (
             </View>
           </View>
         </View>
+        
       )}
       keyExtractor={(item) => item._id.toString()}
       contentContainerStyle={styles.messageList}
+      keyboardShouldPersistTaps="handled"
     />
     <View style={styles.messageInput}>
       <TextInput
@@ -140,25 +144,20 @@ return (
       </TouchableOpacity>
     </View>
   </KeyboardAvoidingView>
+  </TouchableWithoutFeedback>
 );
 }
 
-const styles = StyleSheet.create({
-  textSent:  {
-    color:"white"
-  },
-  textRecieved:  {
-    color:"black"
-  },
+const styles = StyleSheet.create({ 
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f7fa', // Soft modern background
   },
   messageList: {
-    padding: 10,
+    padding: 12,
   },
   messageContainer: {
-    marginVertical: 5,
+    marginVertical: 6,
   },
   sent: {
     alignItems: 'flex-end',
@@ -168,49 +167,68 @@ const styles = StyleSheet.create({
   },
   message: {
     maxWidth: '80%',
-    padding: 10,
-    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   messageSent: {
-    backgroundColor: '#07255d',
-    color:"white"
+    backgroundColor: '#007AFF', // iOS blue
   },
   messageReceived: {
-    backgroundColor: '#E5E5EA',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e1e4e8',
+  },
+  textSent: {
+    color: 'white',
+    fontSize: 15,
+  },
+  textRecieved: {
+    color: '#111',
+    fontSize: 15,
   },
   smallTextRec: {
-    fontSize: 10,
-    color: '#555',
+    fontSize: 11,
+    color: '#999',
   },
   smallTextSent: {
-    fontSize: 10,
-    color: 'white',
+    fontSize: 11,
+    color: '#e1e1e1',
   },
   messageTime: {
     alignSelf: 'flex-end',
-    marginTop: 5,
+    marginTop: 4,
   },
   messageInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderTopWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#e0e0e0',
+    backgroundColor: '#ffffff',
+    marginBottom: Platform.OS === 'ios' ? 40 : 50, // Adjust for iOS keyboard
   },
   input: {
     flex: 1,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#07255d',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#f0f2f5',
     borderRadius: 25,
+    fontSize: 16,
     marginRight: 10,
   },
   sendButton: {
-    backgroundColor: '#07255d',
+    backgroundColor: '#007AFF',
     padding: 12,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 2,
   },
 });
 
