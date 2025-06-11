@@ -11,6 +11,7 @@ export default function CelebrationAnimation({ kidName, maleKid, settings }:{ ki
     const lastLetter = name.slice(-1);
     if (!letters.includes(lastLetter)) name += "e";
   }
+  
   return (
     <View style={styles.container}>
       <LottieView
