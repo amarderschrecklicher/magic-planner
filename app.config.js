@@ -79,7 +79,7 @@ export default function () {
       [
         "expo-notifications",
         {
-          icon: "./assets/images/notification_icon.png",
+          icon: "./assets/images/notification-icon.png",
           color: "#ffffff"
         }
       ],
