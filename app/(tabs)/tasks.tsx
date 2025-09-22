@@ -19,16 +19,12 @@ import {
   fetchSettings,
   fetchSubTasks,
   fetchTokens,
-  addToken,
   registerForPushNotificationsAsync,
-  updateToken,
   SettingsData,
   SubTaskData,
   TaskData,
   deleteToken
 } from "../../modules/fetchingData";
-import CurrentDate from "../../components/CurrentDate";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { router, useFocusEffect } from "expo-router";
 import * as Notifications from 'expo-notifications';
 import { Notification, NotificationResponse } from 'expo-notifications';
@@ -61,6 +57,8 @@ function TasksScreen() {
       shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: false,
     }),
   });
 
@@ -74,41 +72,6 @@ function TasksScreen() {
 
   getToken();
 }, []);
-
-  // Update the database with the new token if necessary
-  useEffect(() => {
-    const updateOrAddToken = async () => {
-      let storedToken = await AsyncStorage.getItem("expo_token");
-      console.log("expoPushToken:", expoPushToken);
-      console.log("storedToken:", storedToken);
-
-      if ( expoPushToken !== "" && expoPushToken != storedToken) {
-        console.log("Token updatean!")
-        await AsyncStorage.setItem("expo_token", expoPushToken);
-        updateToken(expoPushToken, accountID);
-      }
-      else if ((storedToken == undefined && expoPushToken == "") || (expoPushToken !== "" && storedToken == null)) {
-        console.log("Adding new token!");
-        addToken(expoPushToken, accountID, Device.modelName || "");
-        await AsyncStorage.setItem("expo_token", expoPushToken);
-        console.log("Token added successfully!");
-      }
-    };
-
-    updateOrAddToken();
-  }, [expoPushToken, accountID]);
-
-  useEffect(() => {
-    const getStoredToken = async () => {
-      console.log("Fetching stored token for account ID:", accountID);
-      const { token } = await fetchTokens(accountID);
-      console.log("Stored token fetched:", token.token);
-      await AsyncStorage.setItem("expo_token", expoPushToken);
-    };
-
-    getStoredToken();
-  }, [accountID]);
-
 
   useFocusEffect(
   useCallback(() => {
@@ -173,7 +136,6 @@ useEffect(() => {
         setSettings(settingsData);
 
     } catch (error) {
-      navigation.navigate('Home', { accountID: 0 });
       console.error("Failed to fetch data in TasksScreen:", error);
     }
   }
@@ -209,10 +171,7 @@ useEffect(() => {
     try {
       console.log("Logging out...");
       deleteToken(expoPushToken)
-      await AsyncStorage.removeItem("account");
-      await AsyncStorage.removeItem("email");
-      await AsyncStorage.removeItem("password");
-      await AsyncStorage.removeItem("expo_token");
+      await AsyncStorage.clear();
       router.replace({ pathname: "/" });
 //
     } catch (e) {

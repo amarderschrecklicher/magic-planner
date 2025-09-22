@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import registerNNPushToken from "native-notify";
 import { router } from "expo-router";
 import  { auth }  from "../modules/firebase";
 import LoadingAnimation from "../components/LoadingAnimation";

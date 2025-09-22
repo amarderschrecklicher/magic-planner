@@ -43,7 +43,7 @@ export default function TabLayout() {
                 case "progress":
                   iconName = "stats-chart-outline";
                   break;
-                case "instruction":
+                case "instructions":
                   iconName = "book-outline";
                   break;
                 default:
@@ -56,7 +56,7 @@ export default function TabLayout() {
         >
           <Tabs.Screen name="tasks" options={{ title: "Zadaci" }} />
           <Tabs.Screen name="progress" options={{ title: "Napredak" }} />
-          <Tabs.Screen name="instruction" options={{ title: "Materijali" }} />
+          <Tabs.Screen name="instructions" options={{ title: "Materijali" }} />
         </Tabs>
 
         {/* Global SideButtons – pojaviće se na svim tabovima */}

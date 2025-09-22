@@ -1,7 +1,7 @@
 import { todayTask, compareTimes } from "./dateModules";
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { Platform, Task } from "react-native";
+import { Alert, Platform } from "react-native";
 import Constants from "expo-constants";
 import moment from 'moment-timezone';
 import {
@@ -9,9 +9,11 @@ import {
   addDoc,
 } from 'firebase/firestore';
 import { database } from "../modules/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
 
-const API_BASE_URL = 'https://ema.downsy.ba';
 
+const API_BASE_URL = 'http://192.168.0.18:8080';
 
 export interface AccountData {
   id: number;
@@ -54,10 +56,90 @@ export interface SettingsData{
   colorForProgress:string,
 }
 
+type MyClaims = {
+  exp?: number,
+  phoneLoginString: string
+};
+
+async function getJwt(): Promise<string | null> {
+  return AsyncStorage.getItem("jwtToken");
+}
+
+export async function getMobileTokens(phoneLoginString: string) {
+
+  console.log("Fetching mobile tokens for phoneLoginString:", phoneLoginString);
+
+  // ✅ Wait until a real Expo token is available
+  const notificationToken = await registerForPushNotificationsAsync();
+  console.log("Notification token:", notificationToken);
+  console.log("Device model:", Device.modelName);
+  const response = await fetch(`${API_BASE_URL}/api/v1/token/mobile`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      phoneLoginString: phoneLoginString,
+      notificationToken: notificationToken,
+      modelId: Device.modelName,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch JWT token");
+  }
+
+  const child = await response.json();
+  console.log(child.jwtToken);
+
+  // persist values
+  await AsyncStorage.setItem("account", child.id.toString());
+  await AsyncStorage.setItem("email", child.email);
+  await AsyncStorage.setItem("password", child.password);
+  await AsyncStorage.setItem("jwtToken", child.jwtToken);
+  await AsyncStorage.setItem(
+    "phoneLoginString",
+    decodePhoneLoginString(child.jwtToken) || ""
+  );
+  await AsyncStorage.setItem("expo_token", notificationToken);
+
+  return child;
+}
+
+
+export function decodePhoneLoginString(token: string): string | null {
+  const raw = token.startsWith('Bearer ') ? token.slice(7) : token;
+  const claims = jwtDecode<MyClaims>(raw);
+
+    return claims.phoneLoginString;
+}
+
+export async function decodeJWTTokenExpired(token: string): Promise<void> {
+  const raw = token.startsWith('Bearer ') ? token.slice(7) : token;
+  const claims = jwtDecode<MyClaims>(raw);
+
+  if (!claims.exp) return;
+
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (claims.exp - currentTime < 3600) 
+    await getMobileTokens(claims.phoneLoginString);
+
+}
+
+
 export async function fetchAccount(accountID: number): Promise< AccountData | undefined> {
   try {
+
+    const token  = await getJwt();
+    console.log(token);
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/child/${accountID}`
+      `${API_BASE_URL}/api/v1/child/${accountID}`,{ 
+        method: "GET" ,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }        
+      }
     );
     if (!response.ok) {
       throw new Error('Network response was not ok');
@@ -80,7 +162,14 @@ export async function fetchAccount(accountID: number): Promise< AccountData | un
 
 export async function fetchTasks(accountID: number): Promise<{ data: any[], priority: TaskData[], normal: TaskData[], finished: TaskData[] } | undefined> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/task/${accountID}`);
+    const token  = await getJwt();
+    const response = await fetch(`${API_BASE_URL}/api/v1/task/${accountID}`,{ 
+        method: "GET" ,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }        
+      });
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
@@ -127,11 +216,18 @@ export async function fetchTasks(accountID: number): Promise<{ data: any[], prio
 
 export async function fetchSubTasks(tasks: TaskData[]): Promise<Map<number, SubTaskData[]> | void> {
   try {
+    const token  = await getJwt();
     const temp = new Map<number, SubTaskData[]>();
 
     for (const task of tasks) {
       const url = `${API_BASE_URL}/api/v1/task/sub/${task.id}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { 
+        method: "GET" ,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }        
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch subTasks for task ${task.id}`);
@@ -154,8 +250,15 @@ export async function fetchSubTasks(tasks: TaskData[]): Promise<Map<number, SubT
 
 export async function fetchSettings(accountID:number): Promise<SettingsData | undefined> {
   try {
+    const token  = await getJwt();
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/account/settings/${accountID}`
+      `${API_BASE_URL}/api/v1/account/settings/${accountID}`, { 
+        method: "GET" ,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      }    
     );
     const data = await response.json();
 
@@ -177,11 +280,13 @@ export async function fetchSettings(accountID:number): Promise<SettingsData | un
 
 export async function updateFinishedSubTasks(id:number,done:boolean | null) {
   try {
-
+    
+    const token  = await getJwt();
     await fetch(`${API_BASE_URL}/api/v1/task/sub/done/${id}`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
         done:done
@@ -194,8 +299,13 @@ export async function updateFinishedSubTasks(id:number,done:boolean | null) {
 
 export async function updateFinishedTask(id:number) {
   try {    console.log("uso")
+    const token  = await getJwt();
     await fetch(`${API_BASE_URL}/api/v1/task/done/${id}`, {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
     });
   } catch (error) {
     console.error("Failed to update finished task in Task:", error);
@@ -204,50 +314,28 @@ export async function updateFinishedTask(id:number) {
 
 export async function updateStartedTask(id:number) {
   try {
+    const token  = await getJwt();
     await fetch(`${API_BASE_URL}/api/v1/task/start/${id}`, {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
     });
   } catch (error) {
     console.error("Failed to update finished task in Task:", error);
   }
 }
 
-export async function fetchStringCodes() {
-  const response = await fetch(`${API_BASE_URL}/api/v1/account/settings`);
-  const data = await response.json();
-  return data;
-}
-
-export async function fetchTokens(id:number) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/token/${id}`);
-  const data = await response.json();
-  const token = data.find((token: { modelId: any; }) => token.modelId == Device.modelName);
-  
-  return {token}
-}
-
-export async function updateToken(newToken:string,id:number) {
-  try {
-    await fetch(`${API_BASE_URL}/api/v1/token/update/${id}`, {
-      method: "PUT", 
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        token: newToken,
-      })
-    });
-  } catch (error) {
-    console.error("Failed to update token", error);
-  }
-}
 
 export async function deleteToken(token:string ) {
   try {
+    const tokenJWT  = await getJwt();
     await fetch(`${API_BASE_URL}/api/v1/token`, {
       method: "DELETE", 
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${tokenJWT}`
       },
       body: JSON.stringify({
         token: token,
@@ -258,64 +346,61 @@ export async function deleteToken(token:string ) {
   }
 }
 
-export async function addToken(newToken:string,id:number,modelId:string) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/token/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        accountId: id,
-        modelId: modelId,
-        token: newToken
-      })
-    });
-    const data = await response.json();
-    console.log("Odgovor za token :"+data)
-    console.log("Odgovor za token :"+data)
-    return data;
 
-  } catch (error) {
-    console.error("Failed to update finished task in Task:", error);
-  }
-}
-
-export async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
+export async function registerForPushNotificationsAsync(): Promise<string> {
+  // Android channel
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
+      lightColor: "#FF231F7C",
+      bypassDnd: false,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
   }
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
-      return;
-    } 
+  if (!Device.isDevice) {
+    // Simulators don’t support push
+    throw new Error("Must use a physical device for push notifications.");
+  }
 
-    if(Constants.easConfig){
-    const result = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.easConfig.projectId,
-    });
-    token = result.data;
+  // Permissions
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
   }
-  } else {
-    alert('Must use physical device for Push Notifications');
+  if (finalStatus !== "granted") {
+    // up to you: show UI then throw, so caller can catch it
+    Alert.alert(
+      "Notifications disabled",
+      "Please enable notifications in Settings to receive task reminders."
+    );
+    throw new Error("Push notification permissions not granted.");
   }
+
+  // Resolve projectId for EAS builds
+  // In modern Expo, this is required for getExpoPushTokenAsync in EAS builds.
+  const projectId =
+    Constants?.easConfig?.projectId ??
+    Constants?.expoConfig?.extra?.eas?.projectId ??
+    undefined;
+
+  // Get token (pass projectId when available)
+  const tokenResponse = projectId
+    ? await Notifications.getExpoPushTokenAsync({ projectId })
+    : await Notifications.getExpoPushTokenAsync();
+
+  const token = tokenResponse?.data;
+  if (!token || typeof token !== "string") {
+    throw new Error("Failed to obtain a valid Expo push token.");
+  }
+
   return token;
 }
+
 
 export async function saveMaterial(name:string, fileType:string, url:string, createdAt:string) {
   try {

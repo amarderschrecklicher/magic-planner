@@ -9,10 +9,8 @@ import {
   SafeAreaView,
 } from "react-native";
 import { CameraView } from "expo-camera";
-import { CommonActions } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import LottieView from "lottie-react-native";
-import { fetchStringCodes } from "../modules/fetchingData";
+import { getMobileTokens } from "../modules/fetchingData";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../modules/firebase";
 import { useRouter } from "expo-router";
@@ -20,28 +18,18 @@ import { useUser } from "@/modules/UserContext";
 
 function ScanQRCodeScreen() {
   const [scanned, setScanned] = useState(false);
-  const [stringCodes, setStringCodes] = useState([]);
   const [isAuthenticated, setAuthenticated] = useState(false);
   const [nonExistentAccount, setNonExistentAccount] = useState(false);
   const { accountID, email, setUser } = useUser();
 
   const router = useRouter();
-  useEffect(() => {
-    fetchCodes();
-  }, []);
 
-  async function fetchCodes() {
-    const data = await fetchStringCodes();
-    setStringCodes(data);
-  }
 
   const storeData = async (child:any) => {
     try {
-      await AsyncStorage.setItem("account", child.id.toString());
-      await AsyncStorage.setItem("email", child.email);
-      await AsyncStorage.setItem("password", child.password);
       setUser(child.id.toString(), child.email);
       await signInWithEmailAndPassword(auth, child.email, child.password);
+      setAuthenticated(true);
       console.log("Login success");
     } catch (e) {
       console.log("Error when storing data: " + e);
@@ -51,19 +39,16 @@ function ScanQRCodeScreen() {
 
   const handleBarCodeScanned = async ({ data }: { data: any }) => {
     setScanned(true);
-    let found = false;
 
-    for (const string of stringCodes) {
-      if (string.phoneLoginString === data) {
-        await storeData(string.child);
-        setAuthenticated(true);
-        setUser(string.child.id.toString(), string.child.email);
-        found = true;
-        break;
+        try {
+          const response = await getMobileTokens(data);
+          await storeData(response);
+
+
+        } catch (error) {
+          console.error(error);
+          setNonExistentAccount(true);
       }
-    }
-
-    if (!found) setNonExistentAccount(true);
   };
 
   const navigateToTabs = () => {
