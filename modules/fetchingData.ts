@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
 
-const API_BASE_URL = 'http://192.168.0.18:8080';
+const API_BASE_URL = 'http://192.168.33.23:8080';
 
 export interface AccountData {
   id: number;
@@ -63,6 +63,33 @@ type MyClaims = {
 
 async function getJwt(): Promise<string | null> {
   return AsyncStorage.getItem("jwtToken");
+}
+
+export async function apiFetch(input: string, init: RequestInit = {}) {
+  let access = await getJwt();
+  const headers = {
+    "Content-Type": "application/json",
+    ...(init.headers as Record<string, string> | undefined),
+    ...(access ? { Authorization: `Bearer ${access}` } : {}),
+  };
+
+  // First attempt
+  let res = await fetch(input, { ...init, headers });
+
+  if (res.status !== 401) return res;
+
+  // Attempt refresh once
+  const phoneLoginString = await AsyncStorage.getItem("phoneLoginString");
+  const newAccess = await getMobileTokens(phoneLoginString || "");
+  if (!newAccess) return res; // still 401; let caller handle logout
+
+  // Retry original with new token
+  const retryHeaders = {
+    ...headers,
+    Authorization: `Bearer ${newAccess}`,
+  };
+  res = await fetch(input, { ...init, headers: retryHeaders });
+  return res;
 }
 
 export async function getMobileTokens(phoneLoginString: string) {
@@ -130,21 +157,15 @@ export async function decodeJWTTokenExpired(token: string): Promise<void> {
 export async function fetchAccount(accountID: number): Promise< AccountData | undefined> {
   try {
 
-    const token  = await getJwt();
-    console.log(token);
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/child/${accountID}`,{ 
-        method: "GET" ,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }        
-      }
-    );
-    if (!response.ok) {
+    const res = await apiFetch(`${API_BASE_URL}/api/v1/child/${accountID}`, {
+      method: "GET",
+    });
+    if (!res.ok) {
       throw new Error('Network response was not ok');
     }
-    const data = await response.json();
+
+    const data = await res.json();
+
     const account :AccountData = {
       id: data.id,
       name: data.name,
@@ -162,14 +183,11 @@ export async function fetchAccount(accountID: number): Promise< AccountData | un
 
 export async function fetchTasks(accountID: number): Promise<{ data: any[], priority: TaskData[], normal: TaskData[], finished: TaskData[] } | undefined> {
   try {
-    const token  = await getJwt();
-    const response = await fetch(`${API_BASE_URL}/api/v1/task/${accountID}`,{ 
-        method: "GET" ,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }        
+    
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/task/${accountID}`,{ 
+        method: "GET"       
       });
+
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
@@ -216,17 +234,12 @@ export async function fetchTasks(accountID: number): Promise<{ data: any[], prio
 
 export async function fetchSubTasks(tasks: TaskData[]): Promise<Map<number, SubTaskData[]> | void> {
   try {
-    const token  = await getJwt();
+    
     const temp = new Map<number, SubTaskData[]>();
 
     for (const task of tasks) {
-      const url = `${API_BASE_URL}/api/v1/task/sub/${task.id}`;
-      const response = await fetch(url, { 
-        method: "GET" ,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }        
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/task/sub/${task.id}`, { 
+        method: "GET"        
       });
 
       if (!response.ok) {
@@ -250,16 +263,12 @@ export async function fetchSubTasks(tasks: TaskData[]): Promise<Map<number, SubT
 
 export async function fetchSettings(accountID:number): Promise<SettingsData | undefined> {
   try {
-    const token  = await getJwt();
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/account/settings/${accountID}`, { 
-        method: "GET" ,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
+        method: "GET" 
       }    
     );
+
     const data = await response.json();
 
     const settings:SettingsData = {
@@ -281,13 +290,8 @@ export async function fetchSettings(accountID:number): Promise<SettingsData | un
 export async function updateFinishedSubTasks(id:number,done:boolean | null) {
   try {
     
-    const token  = await getJwt();
-    await fetch(`${API_BASE_URL}/api/v1/task/sub/done/${id}`, {
+    await apiFetch(`${API_BASE_URL}/api/v1/task/sub/done/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
       body: JSON.stringify({
         done:done
       })
@@ -299,13 +303,9 @@ export async function updateFinishedSubTasks(id:number,done:boolean | null) {
 
 export async function updateFinishedTask(id:number) {
   try {    console.log("uso")
-    const token  = await getJwt();
-    await fetch(`${API_BASE_URL}/api/v1/task/done/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+    
+    await apiFetch(`${API_BASE_URL}/api/v1/task/done/${id}`, {
+      method: "PUT"
     });
   } catch (error) {
     console.error("Failed to update finished task in Task:", error);
@@ -314,13 +314,8 @@ export async function updateFinishedTask(id:number) {
 
 export async function updateStartedTask(id:number) {
   try {
-    const token  = await getJwt();
-    await fetch(`${API_BASE_URL}/api/v1/task/start/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+    await apiFetch(`${API_BASE_URL}/api/v1/task/start/${id}`, {
+      method: "PUT"
     });
   } catch (error) {
     console.error("Failed to update finished task in Task:", error);
@@ -330,13 +325,8 @@ export async function updateStartedTask(id:number) {
 
 export async function deleteToken(token:string ) {
   try {
-    const tokenJWT  = await getJwt();
-    await fetch(`${API_BASE_URL}/api/v1/token`, {
-      method: "DELETE", 
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${tokenJWT}`
-      },
+    await apiFetch(`${API_BASE_URL}/api/v1/token`, {
+      method: "DELETE",
       body: JSON.stringify({
         token: token,
       })

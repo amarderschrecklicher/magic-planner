@@ -18,7 +18,6 @@ import {
   fetchAccount,
   fetchSettings,
   fetchSubTasks,
-  fetchTokens,
   registerForPushNotificationsAsync,
   SettingsData,
   SubTaskData,
@@ -27,8 +26,7 @@ import {
 } from "../../modules/fetchingData";
 import { router, useFocusEffect } from "expo-router";
 import * as Notifications from 'expo-notifications';
-import { Notification, NotificationResponse } from 'expo-notifications';
-import * as Device from 'expo-device';
+import { Notification } from 'expo-notifications';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -100,12 +98,8 @@ useEffect(() => {
 
   return () => {
     // Cleanup on unmount
-    if (notificationListener.current) {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-    }
-    if (responseListener.current) {
-      Notifications.removeNotificationSubscription(responseListener.current);
-    }
+    notificationListener.current?.remove();
+    responseListener.current?.remove();
   };
 }, []);
 
