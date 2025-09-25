@@ -79,16 +79,6 @@ function ProgressScreen() {
             });
     };
 
-  const handleChatPress = () => {
-    router.push("chat");
-  };
-
-  const handleSOSPress = () => {
-    router.push({
-      pathname: "chat",
-      params: { sos: "SOS" },
-    });
-  };
 
     if (!finishedTasks || !subTasks || !settings) {
         return <LoadingAnimation />;
@@ -117,7 +107,7 @@ function ProgressScreen() {
       {finishedTasks.map((task) => {
         const subTaskList = subTasks.get(task.id);
         if (!subTaskList) return null;
-
+        console.log(task)
         return (
           <View key={task.id} style={styles.taskCard}>
             <Task

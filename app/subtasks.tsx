@@ -34,7 +34,7 @@ function SubTasksScreen() {
   );
 
   useEffect(() => {
-    console.log("SubTasksScreen useEffect called with subTasks:",  task.task);
+    console.log("SubTasksScreen useEffect called with subTasks:",  task);
     if (!task || !settings || !subTasks) return;
     sortSubTasks();
   }, [subTasks]);

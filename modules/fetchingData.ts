@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
 
-const API_BASE_URL = 'http://192.168.33.23:8080';
+const API_BASE_URL = 'http://192.168.33.134:8080';
 
 export interface AccountData {
   id: number;
@@ -208,8 +208,8 @@ export async function fetchTasks(accountID: number): Promise<{ data: any[], prio
           description: element.description,
           dueTime: element.dueTime,
           difficulty: element.difficulty,
-          start : element.start? moment(element.start).format('DD.MM.YYYY. u HH:mm') : null,
-          end: element.end? moment(element.end).format('DD.MM.YYYY. u HH:mm') : null,
+          start : element.taskStart? moment(element.taskStart).format('DD.MM.YYYY. u HH:mm') : null,
+          end: element.taskEnd? moment(element.taskEnd).format('DD.MM.YYYY. u HH:mm') : null,
           overDo : todayTask(element.dueDate,element.dueTime)
         }      
         if (!element.done) {        

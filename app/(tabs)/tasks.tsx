@@ -18,7 +18,6 @@ import {
   fetchAccount,
   fetchSettings,
   fetchSubTasks,
-  registerForPushNotificationsAsync,
   SettingsData,
   SubTaskData,
   TaskData,
@@ -60,16 +59,6 @@ function TasksScreen() {
     }),
   });
 
-  useEffect(() => {
-  const getToken = async () => {
-    const token = await registerForPushNotificationsAsync();
-    if (token) {
-      setExpoPushToken(token); 
-    }
-  };
-
-  getToken();
-}, []);
 
   useFocusEffect(
   useCallback(() => {
@@ -103,6 +92,7 @@ useEffect(() => {
   };
 }, []);
 
+
   async function fetchData(refresh: boolean) {
     try {
 
@@ -115,7 +105,7 @@ useEffect(() => {
         setPassword(employeeData.password);
       }
       const tasksData = await fetchTasks(accountID);
-
+      
       if (tasksData) {
         setPriorityTasks(tasksData.priority);
         setNormalTasks(tasksData.normal);
