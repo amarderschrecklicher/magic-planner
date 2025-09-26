@@ -121,7 +121,6 @@ export async function getMobileTokens(phoneLoginString: string) {
   const child = await response.json();
   console.log(child.jwtToken);
 
-  // persist values
   await AsyncStorage.setItem("account", child.id.toString());
   await AsyncStorage.setItem("email", child.email);
   await AsyncStorage.setItem("password", child.password);
