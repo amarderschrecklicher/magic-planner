@@ -154,7 +154,7 @@ useEffect(() => {
   const logout = async () => {
     try {
       console.log("Logging out...");
-      deleteToken(expoPushToken)
+      await deleteToken()
       await AsyncStorage.clear();
       router.replace({ pathname: "/" });
 //

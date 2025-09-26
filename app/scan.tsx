@@ -47,7 +47,10 @@ function ScanQRCodeScreen() {
 
         } catch (error) {
           console.error(error);
+          // short stall before marking as failed
+          setTimeout(() => {
           setNonExistentAccount(true);
+          }, 2000);
       }
   };
 

@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
 
-const API_BASE_URL = 'http://192.168.33.134:8080';
+const API_BASE_URL = 'http://192.168.33.201:8080';
 
 export interface AccountData {
   id: number;
@@ -72,6 +72,8 @@ export async function apiFetch(input: string, init: RequestInit = {}) {
     ...(init.headers as Record<string, string> | undefined),
     ...(access ? { Authorization: `Bearer ${access}` } : {}),
   };
+
+  console.log("initt:", init);
 
   // First attempt
   let res = await fetch(input, { ...init, headers });
@@ -323,12 +325,13 @@ export async function updateStartedTask(id:number) {
 }
 
 
-export async function deleteToken(token:string ) {
+export async function deleteToken( ) {
   try {
+    const token = await AsyncStorage.getItem("expo_token");
     await apiFetch(`${API_BASE_URL}/api/v1/token`, {
       method: "DELETE",
       body: JSON.stringify({
-        token: token,
+        notificationToken: token,
       })
     });
   } catch (error) {
