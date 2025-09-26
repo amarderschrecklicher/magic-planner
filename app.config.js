@@ -1,6 +1,4 @@
-import { withAndroidManifest } from "@expo/config-plugins";
-import * as fs from 'fs';
-import * as path from 'path';
+const { withAndroidManifest } = require('expo/config-plugins');
 
 const withFixFirebaseMetaData = (config) => {
   return withAndroidManifest(config, async (config) => {
