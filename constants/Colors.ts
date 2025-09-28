@@ -24,3 +24,6 @@ export const Colors = {
     tabIconSelected: tintColorDark,
   },
 };
+
+// constants/colors.ts
+export const BACKGROUND_GRADIENT = ["#f0f4f8", "#ffffff"];

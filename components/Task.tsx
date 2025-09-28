@@ -1,7 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useRef, useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  Modal,
+  TouchableOpacity,
+  Image,
+} from "react-native";
+import Checkbox from "expo-checkbox";
+import { CameraView } from "expo-camera";
+import { saveMaterial } from "../modules/fetchingData";
+import { storage } from "../modules/firebase";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import {
+  SettingsData,
+  SubTaskData,
+  TaskData,
+  updateFinishedSubTasks,
+  updateFinishedTask,
+} from "../modules/fetchingData";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as Progress from "react-native-progress";
-import { SettingsData, SubTaskData, TaskData, updateFinishedTask } from "../modules/fetchingData";
 import { LinearGradient } from "expo-linear-gradient";
 import color from "color";
 
@@ -12,13 +32,12 @@ export default function Task({
   subTasks,
   updateTaskScreen,
 }: {
-  task: TaskData,
-  settings: SettingsData,
-  taskColor: string,
-  subTasks: SubTaskData[],
-  updateTaskScreen: any
+  task: TaskData;
+  settings: SettingsData;
+  taskColor: string;
+  subTasks: SubTaskData[];
+  updateTaskScreen: any;
 }) {
-
   const [finishedSubTasks, setFinishedSubTasks] = useState(0);
   const [numberOfSubTasks, setNumberOfSubTasks] = useState(0);
 
@@ -29,7 +48,7 @@ export default function Task({
       if (subTask.done) counter++;
       total++;
     });
-    if (counter == total && !task.done) {
+    if (counter === total && !task.done) {
       updateTaskScreen();
       updateFinishedTask(task.id);
     }
@@ -43,29 +62,25 @@ export default function Task({
 
   return (
     <>
-<View style={[styles.container, { backgroundColor:"#deedf9"}]}>
+      <View style={[styles.container, { backgroundColor: "#f0f6fc" }]}>        
         <Text
-          style={[
-            styles.taskName,
-            {
-              color: settings.colorForFont,
-              fontFamily: settings.font,
-            },
-          ]}
+          style={[styles.taskName, {
+            color: settings.colorForFont,
+            fontFamily: settings.font,
+          }]}
         >
           {task.taskName}
         </Text>
 
-        <View style={[styles.time, { backgroundColor: !task.overDo?"#DD6975": settings.colorOfPriorityTask}]}>
+        <View style={[styles.timeContainer, {
+          backgroundColor: !task.overDo ? "#f44336" : settings.colorOfPriorityTask,
+        }]}
+        >
           <Text
-            style={[
-              styles.defaultText,
-              {
-                fontSize: settings.fontSize + 1,
-                color: settings.colorForFont,
-                fontFamily: settings.font,
-              },
-            ]}
+            style={[styles.timeLabel, {
+              fontSize: settings.fontSize + 1,
+              fontFamily: settings.font,
+            }]}
           >
             {task.done
               ? "Završen:"
@@ -73,44 +88,37 @@ export default function Task({
               ? "Rok prošao"
               : "Rok izvršavanja:"}
           </Text>
+
           <Text
-            style={[
-              styles.dueTimeText,
-              {
-                fontSize: settings.fontSize,
-                color: settings.colorForFont,
-                fontFamily: settings.font,
-              },
-            ]}
+            style={[styles.timeValue, {
+              fontSize: settings.fontSize,
+              fontFamily: settings.font,
+            }]}
           >
-            {task.done ? task.end: !task.overDo ? "" : task.dueTime}
+            {task.done ? task.end : !task.overDo ? "" : task.dueTime}
           </Text>
         </View>
       </View>
 
       {!task.done && (
-        <View style={styles.progress}>
+        <View style={styles.progressContainer}>
           <Progress.Bar
             progress={finishedSubTasks / numberOfSubTasks}
             width={null}
-            height={15}
+            height={14}
             color={settings.colorForProgress}
-            borderColor={"#ddd"}
+            borderColor="#ccc"
             borderWidth={1}
-            borderRadius={8}
-            unfilledColor={"#f0f0f0"}
-            key={finishedSubTasks}
+            borderRadius={10}
+            unfilledColor="#eaeaea"
           />
           <Text
-            style={[
-              styles.progressText,
-              {
-                fontSize: settings.fontSize - 1,
-                fontFamily: settings.font,
-              },
-            ]}
+            style={[styles.progressText, {
+              fontSize: settings.fontSize - 1,
+              fontFamily: settings.font,
+            }]}
           >
-            {finishedSubTasks} od {numberOfSubTasks} završena
+            {finishedSubTasks} od {numberOfSubTasks} završeno
           </Text>
         </View>
       )}
@@ -122,14 +130,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    borderRadius: 20,
+    borderRadius: 18,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
     minHeight: 180,
     justifyContent: "space-between",
+    overflow: "visible",
   },
   taskName: {
     fontSize: 24,
@@ -137,39 +146,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
-  time: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    borderRadius: 10, // Rounded corners // Border thickness
-    borderStyle: "solid",
-    textAlign:"center",
-    padding: 10, // Padding inside the container
-    // Shadow for iOS
-    shadowColor: "#000", // Shadow color
-    shadowOffset: { width: 0, height: 4 }, // Shadow offset (horizontal, vertical)
-    shadowOpacity: 0.3, // Shadow transparency (0 to 1)
-    shadowRadius: 6, // Shadow blur radius
-    // Elevation for Android
-    elevation: 8, // Shadow depth
+  timeContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    alignItems: "center",
   },
-  defaultText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
+  timeLabel: {
+    fontWeight: "600",
+    color: "#fff",
+    marginBottom: 6,
   },
-  dueTimeText: {
-    fontSize: 14,
-    marginTop: 5,
-    textDecorationLine: "none",
-    textAlign: "center",
+  timeValue: {
+    color: "#fff",
   },
-  progress: {
+  progressContainer: {
     marginTop: 20,
     paddingHorizontal: 20,
   },
   progressText: {
-    marginTop: 10,
-    opacity: 0.8,
+    marginTop: 8,
+    color: "#333",
     textAlign: "center",
   },
 });

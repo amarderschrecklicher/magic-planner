@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Dimensions } from 'react-native';
+import { router } from 'expo-router';
 
 const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
@@ -13,7 +14,7 @@ const ChatHeader = ({ title }: {title:string}) => {
   return (
     <View style={styles.container}>
     <TouchableOpacity
-        onPress={() => navigation.goBack()}
+        onPress={() => router.back()}
         accessibilityRole="button"
         accessibilityLabel="Go back"
         style={styles.backButton}
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 12,
-      paddingTop: Platform.OS === 'ios' ? screenHeight * 0.01 : screenHeight * 0.01,
+      paddingTop: Platform.OS === 'ios' ? screenHeight * 0.04 : screenHeight * 0.03,
       paddingBottom: screenHeight * 0.01,
       backgroundColor: '#fff',
       borderBottomWidth: 1,

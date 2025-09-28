@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "752799112874",
+    "project_id": "magic-planner-530fc",
+    "storage_bucket": "magic-planner-530fc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:752799112874:android:06eb17a1269df934b9bad3",
+        "android_client_info": {
+          "package_name": "com.amartc.assistify"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "752799112874-0q1dfo8lssnkti1b8qd8l2sbqcrjl1c8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCEx0E-IOiWe3SB68FymbxEyOep-ZpIzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "752799112874-0q1dfo8lssnkti1b8qd8l2sbqcrjl1c8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:752799112874:android:36bdf252f8238130b9bad3",
+        "android_client_info": {
+          "package_name": "com.amartc.assitify"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "752799112874-0q1dfo8lssnkti1b8qd8l2sbqcrjl1c8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCEx0E-IOiWe3SB68FymbxEyOep-ZpIzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "752799112874-0q1dfo8lssnkti1b8qd8l2sbqcrjl1c8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

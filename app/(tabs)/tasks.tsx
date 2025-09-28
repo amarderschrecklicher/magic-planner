@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -9,37 +9,31 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
-import Task from "../components/Task";
-import WelcomeMessage from "../components/WelcomeMessage";
-import LoadingAnimation from "../components/LoadingAnimation";
-import CelebrationAnimation from "../components/CelebrationAnimation";
+import Task from "../../components/Task";
+import WelcomeMessage from "../../components/WelcomeMessage";
+import LoadingAnimation from "../../components/LoadingAnimation";
+import CelebrationAnimation from "../../components/CelebrationAnimation";
 import {
   fetchTasks,
   fetchAccount,
   fetchSettings,
   fetchSubTasks,
-  fetchTokens,
-  addToken,
-  registerForPushNotificationsAsync,
-  updateToken,
   SettingsData,
   SubTaskData,
   TaskData,
   deleteToken
-} from "../modules/fetchingData";
-import CurrentDate from "../components/CurrentDate";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
-import { CommonActions } from "@react-navigation/native";
+} from "../../modules/fetchingData";
+import { router, useFocusEffect } from "expo-router";
 import * as Notifications from 'expo-notifications';
-import { Notification, NotificationResponse } from 'expo-notifications';
-import * as Device from 'expo-device';
+import { Notification } from 'expo-notifications';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import SideButtons from "../components/SideButtons";
 import { StatusBar } from "expo-status-bar";
-import { registerIndieID, unregisterIndieDevice } from "native-notify";
 import { LinearGradient } from "expo-linear-gradient";
+import { useUser } from "@/modules/UserContext";
+import UnifiedHeader from "@/components/UnifiedHeader";
+import { BACKGROUND_GRADIENT } from '../../constants/Colors';
 
-export default function TasksScreen({ navigation, route }: { navigation: any, route: any }) {
+function TasksScreen() {
 
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
@@ -47,103 +41,71 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
   const responseListener = useRef<Notifications.Subscription | null>(null);
   const [kidName, setKidName] = useState("");
   const [maleKid, setMaleKid] = useState(false);
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [priorityTasks, setPriorityTasks] = useState<TaskData[] | null>(null);
   const [normalTasks, setNormalTasks] = useState<TaskData[] | null>(null);
   const [subTasks, setSubTasks] = useState<Map<number, SubTaskData[]> | null>(null);
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const { accountID } = route.params;
-  const [storedToken, setStoredToken] = useState("no");
+  const { accountID, email } = useUser();
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: false,
     }),
   });
 
-  useEffect(() => {
-    const getStoredToken = async () => {
-      const { token } = await fetchTokens(accountID);
 
-      setStoredToken(token);
-    };
-
-    getStoredToken();
-  }, [accountID]);
-
-  // Fetch the push notification token
-  useEffect(() => {
-    const getToken = async () => {
-      //      const Token = await registerForPushNotificationsAsync();
-      if (email != "") {
-        // setExpoPushToken(Token.data);
-      }
-    };
-
-    getToken();
-  }, []);
-
-  // Update the database with the new token if necessary
-  useEffect(() => {
-
-    if (expoPushToken && storedToken == undefined) {
-      if (expoPushToken !== "") {
-        console.log("Novi token dodat!")
-        addToken(expoPushToken, accountID, Device.modelName || "");
-      } else if (expoPushToken !== "" && expoPushToken != storedToken) {
-        console.log("Token updatean!")
-        updateToken(expoPushToken, accountID);
-      }
-    }
-  }, [expoPushToken, storedToken, accountID]);
-
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
+    console.log("TasksScreen focused, fetching data...");
     fetchData(false);
 
-    const unsubscribe = navigation.addListener("focus", () => {
-      fetchData(false);
-
-    });
-
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification: Notification) => {
-      const title = notification.request.content.title || ""
-      setNotification(notification as Notification);
-      if (title == "Imaš novi task!")
-        onRefresh()
-    });
-
-
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response: NotificationResponse) => {
-      onRefresh()
-    });
-
     return () => {
-      unsubscribe;
-      if (notificationListener.current)
-        Notifications.removeNotificationSubscription(notificationListener.current);
-      if (responseListener.current)
-        Notifications.removeNotificationSubscription(responseListener.current);
+      
     };
-  }, [navigation]);
+  }, [])
+);
+
+useEffect(() => {
+  // This runs once on mount
+  notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+    const title = notification.request.content.title || "";
+    setNotification(notification as Notification);
+    if (title === "Imaš novi task!") {
+      onRefresh();
+    }
+  });
+
+  responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+    onRefresh();
+  });
+
+  return () => {
+    // Cleanup on unmount
+    notificationListener.current?.remove();
+    responseListener.current?.remove();
+  };
+}, []);
+
 
   async function fetchData(refresh: boolean) {
     try {
 
       const employeeData = await fetchAccount(accountID);
-
+      console.log("Fetching data employee:", employeeData);
       if (employeeData) {
 
         setKidName(employeeData.name);
         setMaleKid(employeeData.gender);
-        setEmail(employeeData.email);
         setPassword(employeeData.password);
       }
       const tasksData = await fetchTasks(accountID);
-
+      
       if (tasksData) {
         setPriorityTasks(tasksData.priority);
         setNormalTasks(tasksData.normal);
@@ -158,7 +120,6 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
         setSettings(settingsData);
 
     } catch (error) {
-      navigation.navigate('Home', { accountID: 0 });
       console.error("Failed to fetch data in TasksScreen:", error);
     }
   }
@@ -192,22 +153,11 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
 
   const logout = async () => {
     try {
-      unregisterIndieDevice(`${email}`, 22259, 'xldIGxZI7b0qgDgbFDRgUP');
-      deleteToken(expoPushToken)
-      await AsyncStorage.removeItem("account");
-      await AsyncStorage.removeItem("email");
-      await AsyncStorage.removeItem("password");
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            {
-              name: "Home",
-              params: { accountID: 0 },
-            },
-          ],
-        })
-      );
+      console.log("Logging out...");
+      await deleteToken()
+      await AsyncStorage.clear();
+      router.replace({ pathname: "/" });
+//
     } catch (e) {
       console.log("Error when storing data: " + e);
     }
@@ -215,26 +165,14 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
 
   const handleTaskPress = (task: any) => {
     if (subTasks)
-      navigation.navigate("SubTasks", {
-        task: task,
-        settings: settings,
-        subTasks: subTasks.get(task.id),
+      router.push({
+        pathname: "subtasks",
+        params: {
+          task: JSON.stringify(task),
+          settings: JSON.stringify(settings),
+          subTasks: JSON.stringify(subTasks.get(task.id)),
+        },
       });
-  };
-
-  const handleChatPress = () => {
-    navigation.navigate("Chat", {
-      email: email,
-      accountID: accountID
-    });
-  };
-
-  const handleSOSPress = () => {
-    navigation.navigate("Chat", {
-      sos: "SOS",
-      email: email,
-      accountID: accountID
-    });
   };
 
 
@@ -253,12 +191,14 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
     subTasks.size == 0
   )
     return (
-      <LinearGradient
-        colors={["#FFD700", settings.colorForBackground, "#00457C"]}
-        start={{ x: 0, y: 0 }} // Start at the top
-        end={{ x: 1, y: 0 }} // End at the bottom
-        style={{ flex: 1 }}
-      >
+<LinearGradient
+  colors={BACKGROUND_GRADIENT}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 0, y: 1 }}
+  style={{ flex: 1 }}
+>
+
+
         <SafeAreaView style={{ flex: 1 , marginBottom: 20}}>
           <StatusBar style="auto"
             translucent={true}
@@ -269,36 +209,32 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
           <ScrollView
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           >
-            <View>
-              <CurrentDate settings={settings} />
-              <TouchableOpacity style={styles.logoutButton} onPress={alertFunction}>
-                <SimpleLineIcons name="logout" size={40}></SimpleLineIcons>
-              </TouchableOpacity>
-            </View>
+            <UnifiedHeader
+              settings={settings}
+              title="Zadaci"
+              onLogout={alertFunction}
+            />
             <CelebrationAnimation kidName={kidName} maleKid={maleKid} settings={settings} />
           </ScrollView>
-          <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
         </SafeAreaView>
       </LinearGradient>
     );
   else {
     return (
-      <LinearGradient
-        colors={["#B7F2F2", settings.colorForBackground]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }} 
-        style={{ flex: 1 }}
-      >
+<LinearGradient
+  colors={BACKGROUND_GRADIENT}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 0, y: 1 }}
+  style={{ flex: 1 }}
+>
         <SafeAreaView
-          style={{ flex: 1 }}
+          style={{ flex: 1}}
         >
-          <View style={styles.header}>
-            <CurrentDate settings={settings} />
-            <TouchableOpacity style={styles.logoutButton} onPress={alertFunction}>
-              <SimpleLineIcons name="logout" size={33}></SimpleLineIcons>
-            </TouchableOpacity>
-
-          </View>
+            <UnifiedHeader
+              settings={settings}
+              title="Zadaci"
+              onLogout={alertFunction}
+            />
           
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -306,7 +242,7 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             contentContainerStyle={{
-              paddingBottom: 100, // Add enough padding for the progress bar and bottom bar
+              paddingBottom: 100
             }}
           ><WelcomeMessage name={kidName} male={maleKid} settings={settings} />
             {priorityTasks.length != 0 ? (
@@ -333,7 +269,7 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
                     {priorityTasks.map((task) => {
                       if (!subTasks.get(task.id)) return null;
                       return (
-                        <View key={task.id}>
+                        <View key={task.id} style={{ marginBottom: 40 }}>
                           <TouchableOpacity
                             activeOpacity={0.6}
                             style={styles.taskPressable}
@@ -379,7 +315,7 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
                     {normalTasks.map((task) => {
                       if (!subTasks.get(task.id)) return null;
                       return (
-                        <View key={task.id}>
+                        <View key={task.id} style={{ marginBottom: 40 }}>
                           <TouchableOpacity
                             activeOpacity={0.6}
                             style={styles.taskPressable}
@@ -403,7 +339,6 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
               </>
             ) : undefined}
           </ScrollView>
-          <SideButtons onChatPress={handleChatPress} onSOSPress={handleSOSPress} />
         </SafeAreaView>
       </LinearGradient>
     );
@@ -412,29 +347,22 @@ export default function TasksScreen({ navigation, route }: { navigation: any, ro
 
 const styles = StyleSheet.create({
   tasks: {
-
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
-  title: {
-    fontSize: 24,
-    marginLeft: 25,
-    marginBottom: 10,
-    marginTop: 20,
-    fontWeight: "bold"
+    paddingBottom: 20,
+    marginTop: 10,
   },
   taskPressable: {
     width: 280,
     marginLeft: 25,
+    marginRight: 10,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginBottom: 40, // ili više
+
   },
   congratulationBox: {
     flex: 1,
@@ -443,29 +371,32 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   congratulationsText: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "bold",
-  },
-  logoutButton: {
-    marginTop: 15,
-    marginLeft: 15,
+    color: "#2e7d32",
   },
   container: {
     flex: 1,
-    // Add other styles for your main content container if needed
+    backgroundColor: "#f9f9f9",
   },
   buttonContainer: {
-    position: 'absolute', // Position the container absolutely
-    bottom: 16, // Adjust the bottom spacing as needed
-    right: 16, // Adjust the right spacing as needed
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
   },
   button: {
-    backgroundColor: 'blue', // Set the background color of the button
-    width: 64, // Set the width and height to make it circular
-    height: 64,
-    borderRadius: 32, // Set half of the width to make it circular
-    alignItems: 'center', // Center the icon horizontally
-    justifyContent: 'center', // Center the icon vertically
-    // Add other styles for the button if needed
+    backgroundColor: '#007AFF',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
 });
+
+
+export default TasksScreen;
