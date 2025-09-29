@@ -125,76 +125,76 @@ const MaterialsScreen = ({ navigation, route }: { navigation: any, route: any })
   const pdfMaterials = materials.filter(material => material.contentType === 'application/pdf');
 
   return (
-<LinearGradient
-  colors={BACKGROUND_GRADIENT}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 0, y: 1 }}
-  style={{ flex: 1 }}
->
+    <LinearGradient
+      colors={BACKGROUND_GRADIENT}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={{ flex: 1 }}
+    >
 
       <SafeAreaView style={{ flex: 1 }}>
         <UnifiedHeader
-           settings={settings}
-            title="Materijali"
+          settings={settings}
+          title="Materijali"
         />
 
 
         <FlatList
           contentContainerStyle={{ paddingBottom: 100 }}
           ListHeaderComponent={() => (
-<>
-  <Text style={[styles.sectionHeader, { fontSize: settings.fontSize + 6, fontFamily: settings.font }]}>
-    Instrukcije
-  </Text>
+            <>
+              <Text style={[styles.sectionHeader, { fontSize: settings.fontSize + 6, fontFamily: settings.font }]}>
+                Instrukcije
+              </Text>
 
-  {imageMaterials.length > 0 && (
-    <>
-      <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
-        Slike
-      </Text>
-      <FlatList
-        data={imageMaterials}
-        renderItem={renderImageOrVideo}
-        keyExtractor={item => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
-      />
-    </>
-  )}
+              {imageMaterials.length > 0 && (
+                <>
+                  <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
+                    Slike
+                  </Text>
+                  <FlatList
+                    data={imageMaterials}
+                    renderItem={renderImageOrVideo}
+                    keyExtractor={item => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalList}
+                  />
+                </>
+              )}
 
-  {videoMaterials.length > 0 && (
-    <>
-      <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
-        Videozapisi
-      </Text>
-      <FlatList
-        data={videoMaterials}
-        renderItem={renderImageOrVideo}
-        keyExtractor={item => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
-      />
-    </>
-  )}
+              {videoMaterials.length > 0 && (
+                <>
+                  <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
+                    Videozapisi
+                  </Text>
+                  <FlatList
+                    data={videoMaterials}
+                    renderItem={renderImageOrVideo}
+                    keyExtractor={item => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalList}
+                  />
+                </>
+              )}
 
-  {pdfMaterials.length > 0 && (
-    <>
-      <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
-        PDF dokumenti
-      </Text>
-      <FlatList
-        data={pdfMaterials}
-        renderItem={renderPDF}
-        keyExtractor={item => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalList}
-      />
-    </>
-  )}
-</>
+              {pdfMaterials.length > 0 && (
+                <>
+                  <Text style={[styles.subsectionTitle, { fontSize: settings.fontSize + 1, fontFamily: settings.font }]}>
+                    PDF dokumenti
+                  </Text>
+                  <FlatList
+                    data={pdfMaterials}
+                    renderItem={renderPDF}
+                    keyExtractor={item => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalList}
+                  />
+                </>
+              )}
+            </>
 
           )}
           data={[]}
@@ -237,25 +237,25 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   sectionHeader: {
-  fontSize: 24,
-  fontWeight: '700',
-  marginTop: 20,
-  marginBottom: 10,
-  marginLeft: 20,
-  color: '#2c3e50',
-},
-subsectionTitle: {
-  fontSize: 18,
-  fontWeight: '600',
-  marginBottom: 10,
-  marginTop: 15,
-  marginLeft: 20,
-  color: '#333',
-},
-horizontalList: {
-  paddingHorizontal: 15,
-  paddingBottom: 10,
-},
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 20,
+    marginBottom: 10,
+    marginLeft: 20,
+    color: '#2c3e50',
+  },
+  subsectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    marginTop: 15,
+    marginLeft: 20,
+    color: '#333',
+  },
+  horizontalList: {
+    paddingHorizontal: 15,
+    paddingBottom: 10,
+  },
 
   materialImage: {
     width: '100%',
