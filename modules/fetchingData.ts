@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
 
-const API_BASE_URL = 'http://192.168.63.149:8080';
+const API_BASE_URL = 'http://192.168.0.15:8080';
 
 export interface AccountData {
   id: number;
