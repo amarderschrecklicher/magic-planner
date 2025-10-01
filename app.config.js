@@ -46,7 +46,7 @@ export default function () {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/react-logo.png",
+        foregroundImage: "./assets/images/logoapp.png",
         backgroundColor: "#ffffff"
       },
       permissions: [
