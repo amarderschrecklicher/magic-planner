@@ -24,7 +24,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": ""
+        "serviceAccountKeyPath": "./ema-emplyomentmonitoringagenda-f5dc8e984602.json"
       }
     }
   }
