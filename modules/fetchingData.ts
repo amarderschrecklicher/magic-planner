@@ -8,7 +8,7 @@ import {
   collection,
   addDoc,
 } from 'firebase/firestore';
-import { database } from "../modules/firebase";
+import { database } from "./firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
