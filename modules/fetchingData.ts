@@ -12,7 +12,7 @@ import { database } from "../modules/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
-//APK
+//APK build 
 
 const API_BASE_URL = 'http://192.168.0.15:8080';
 
