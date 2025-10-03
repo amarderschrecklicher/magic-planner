@@ -1,3 +1,5 @@
+import { version } from 'react';
+
 const { withAndroidManifest } = require('expo/config-plugins');
 
 const withFixFirebaseMetaData = (config) => {
@@ -54,6 +56,7 @@ export default function () {
         "android.permission.RECORD_AUDIO"
       ],
       package: "com.amartc.assitify",
+      versionCode: 2,
       googleServicesFile: "./google-services.json",
       statusBar: {
         translucent: true

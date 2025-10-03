@@ -12,7 +12,7 @@ import { database } from "./firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from "jwt-decode";
 
-//APK build 
+//AAB build google play
 
 const API_BASE_URL = 'https://ema.ba';
 
