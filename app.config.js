@@ -56,7 +56,7 @@ export default function () {
         "android.permission.RECORD_AUDIO"
       ],
       package: "com.amartc.assitify",
-      versionCode: 2,
+      versionCode: 3,
       googleServicesFile: "./google-services.json",
       statusBar: {
         translucent: true
