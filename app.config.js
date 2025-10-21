@@ -29,8 +29,8 @@ const withFixFirebaseMetaData = (config) => {
 
 export default function () {
   return withFixFirebaseMetaData({
-    name: "magic-planner",
-    slug: "assitify",
+    name: "EMA",
+    slug: "ema",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -56,7 +56,7 @@ export default function () {
         "android.permission.RECORD_AUDIO"
       ],
       package: "com.amartc.assitify",
-      versionCode: 3,
+      versionCode: 4,
       googleServicesFile: "./google-services.json",
       statusBar: {
         translucent: true
