@@ -14,6 +14,8 @@ import { jwtDecode } from "jwt-decode";
 
 //AAB build google play
 
+//const API_BASE_URL = 'http://192.168.250.168:8080';
+
 const API_BASE_URL = 'https://ema.ba';
 
 export interface AccountData {
@@ -74,7 +76,7 @@ export async function apiFetch(input: string, init: RequestInit = {}) {
     ...(access ? { Authorization: `Bearer ${access}` } : {}),
   };
 
-  console.log("initt:", init);
+  //console.log("initt:", init);
 
   // First attempt
   let res = await fetch(input, { ...init, headers });
@@ -100,9 +102,9 @@ export async function getMobileTokens(phoneLoginString: string) {
   console.log("Fetching mobile tokens for phoneLoginString:", phoneLoginString);
 
   // ✅ Wait until a real Expo token is available
-  const notificationToken = await registerForPushNotificationsAsync();
-  console.log("Notification token:", notificationToken);
-  console.log("Device model:", Device.modelName);
+  //const notificationToken = await registerForPushNotificationsAsync();
+  //console.log("Notification token:", notificationToken);
+  //console.log("Device model:", Device.modelName);
   const response = await fetch(`${API_BASE_URL}/api/v1/token/mobile`, {
     method: "POST",
     headers: {
@@ -110,7 +112,7 @@ export async function getMobileTokens(phoneLoginString: string) {
     },
     body: JSON.stringify({
       phoneLoginString: phoneLoginString,
-      notificationToken: notificationToken,
+      notificationToken: "notificationToken",
       modelId: Device.modelName,
     }),
   });
@@ -120,9 +122,11 @@ export async function getMobileTokens(phoneLoginString: string) {
   }
 
   const child = await response.json();
-  console.log(child.jwtToken);
+  //console.log(child.jwtToken);
 
-  await AsyncStorage.setItem("account", child.id.toString());
+  await AsyncStorage.setItem("id", child.id.toString());
+  await AsyncStorage.setItem("name", child.name);
+  await AsyncStorage.setItem("gender", child.kidMale.toString());
   await AsyncStorage.setItem("email", child.email);
   await AsyncStorage.setItem("password", child.password);
   await AsyncStorage.setItem("jwtToken", child.jwtToken);
@@ -130,7 +134,7 @@ export async function getMobileTokens(phoneLoginString: string) {
     "phoneLoginString",
     decodePhoneLoginString(child.jwtToken) || ""
   );
-  await AsyncStorage.setItem("expo_token", notificationToken);
+  await AsyncStorage.setItem("expo_token", "notificationToken");
 
   return child;
 }
@@ -183,10 +187,46 @@ export async function fetchAccount(accountID: number): Promise< AccountData | un
 }
 
 
-export async function fetchTasks(accountID: number): Promise<{ data: any[], priority: TaskData[], normal: TaskData[], finished: TaskData[] } | undefined> {
+export async function fetchDoneTasks(accountID: number): Promise<TaskData[] | undefined> {
+  try {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/task/alldone/${accountID}`,{
+      method: "GET"
+    });
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    let doneTasks: TaskData[] = [];
+    data.forEach((element: any) => {
+        let task : TaskData = {
+          id: element.id,
+          taskName: element.taskName,
+          dueDate: element.dueDate,
+          priority: element.priority,
+          done: element.done,
+          description: element.description,
+          dueTime: element.dueTime,
+          difficulty: element.difficulty,
+          start : element.taskStart? moment(element.taskStart).format('DD.MM.YYYY. u HH:mm') : null,
+          end: element.taskEnd? moment(element.taskEnd).format('DD.MM.YYYY. u HH:mm') : null,
+          overDo : todayTask(element.dueDate,element.dueTime)
+        }      
+        doneTasks.push(task);
+    });
+
+    return doneTasks;
+
+  } catch (error) {
+    console.error("Failed to fetch done tasks in TasksScreen:", error);
+    return undefined;
+  }
+}
+
+
+export async function fetchUndoneTasks(accountID: number): Promise<TaskData[] | undefined> {
   try {
     
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/task/${accountID}`,{ 
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/task/undone/${accountID}`,{ 
         method: "GET"       
       });
 
@@ -194,9 +234,10 @@ export async function fetchTasks(accountID: number): Promise<{ data: any[], prio
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
-    let priority: TaskData[] = [];
+
+    
+    //let priority: TaskData[] = [];
     let normal: TaskData[] = [];
-    let finished: TaskData[] = [];
 
     data.forEach((element: any) => {
 
@@ -214,19 +255,15 @@ export async function fetchTasks(accountID: number): Promise<{ data: any[], prio
           end: element.taskEnd? moment(element.taskEnd).format('DD.MM.YYYY. u HH:mm') : null,
           overDo : todayTask(element.dueDate,element.dueTime)
         }      
-        if (!element.done) {        
-          if (element.priority) priority.push(task);
-          else normal.push(task);
-      }
-      else{
-        finished.push(task);
-      }
+
+        normal.push(task);
     });
 
-    priority.sort((a: any, b: any) => compareTimes(a, b));
-    normal.sort((a: any, b: any) => compareTimes(a, b));
+    //priority.sort((a: any, b: any) => compareTimes(a, b));
+    //normal.sort((a: any, b: any) => compareTimes(a, b));
 
-    return { data, priority, normal, finished };
+    return normal;
+    
   } catch (error) {
     console.error("Failed to fetch tasks in TasksScreen:", error);
     return undefined;

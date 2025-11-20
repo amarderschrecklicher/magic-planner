@@ -30,7 +30,7 @@ const withFixFirebaseMetaData = (config) => {
 export default function () {
   return withFixFirebaseMetaData({
     name: "EMA",
-    slug: "ema",
+    slug: "assitify",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -56,7 +56,7 @@ export default function () {
         "android.permission.RECORD_AUDIO"
       ],
       package: "com.amartc.assitify",
-      versionCode: 4,
+      versionCode: 5,
       googleServicesFile: "./google-services.json",
       statusBar: {
         translucent: true

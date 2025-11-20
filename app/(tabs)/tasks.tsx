@@ -14,14 +14,14 @@ import WelcomeMessage from "../../components/WelcomeMessage";
 import LoadingAnimation from "../../components/LoadingAnimation";
 import CelebrationAnimation from "../../components/CelebrationAnimation";
 import {
-  fetchTasks,
   fetchAccount,
   fetchSettings,
   fetchSubTasks,
   SettingsData,
   SubTaskData,
   TaskData,
-  deleteToken
+  deleteToken,
+  fetchUndoneTasks
 } from "../../modules/fetchingData";
 import { router, useFocusEffect } from "expo-router";
 import * as Notifications from 'expo-notifications';
@@ -35,19 +35,15 @@ import { BACKGROUND_GRADIENT } from '../../constants/Colors';
 
 function TasksScreen() {
 
-  const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
-  const [kidName, setKidName] = useState("");
-  const [maleKid, setMaleKid] = useState(false);
-  const [password, setPassword] = useState("");
-  const [priorityTasks, setPriorityTasks] = useState<TaskData[] | null>(null);
+  //const [priorityTasks, setPriorityTasks] = useState<TaskData[] | null>(null);
   const [normalTasks, setNormalTasks] = useState<TaskData[] | null>(null);
   const [subTasks, setSubTasks] = useState<Map<number, SubTaskData[]> | null>(null);
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const { accountID, email } = useUser();
+  const { accountID,name,gender} = useUser();
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -96,28 +92,23 @@ useEffect(() => {
   async function fetchData(refresh: boolean) {
     try {
 
-      const employeeData = await fetchAccount(accountID);
-      console.log("Fetching data employee:", employeeData);
-      if (employeeData) {
-
-        setKidName(employeeData.name);
-        setMaleKid(employeeData.gender);
-        setPassword(employeeData.password);
-      }
-      const tasksData = await fetchTasks(accountID);
-      
-      if (tasksData) {
-        setPriorityTasks(tasksData.priority);
-        setNormalTasks(tasksData.normal);
-      }
-      const subtasksData = await fetchSubTasks(tasksData ? tasksData.data : []);
-
-      if (subtasksData)
-        setSubTasks(subtasksData);
       const settingsData = await fetchSettings(accountID);
 
       if (settingsData)
         setSettings(settingsData);
+
+      const tasksData = await fetchUndoneTasks(accountID);
+      
+      if (tasksData) {
+        //setPriorityTasks(tasksData.priority);
+
+        setNormalTasks(tasksData);
+      }
+      const subtasksData = await fetchSubTasks(tasksData ? tasksData : []);
+
+      if (subtasksData)
+        setSubTasks(subtasksData);
+
 
     } catch (error) {
       console.error("Failed to fetch data in TasksScreen:", error);
@@ -176,35 +167,39 @@ useEffect(() => {
   };
 
 
-  if (
-    subTasks == null ||
-    priorityTasks == null ||
-    normalTasks == null ||
-    kidName == null ||
-    maleKid == null ||
-    settings == null
-  ) {
-    return <LoadingAnimation />;
-  }
-  else if (
-    (priorityTasks.length == 0 && normalTasks.length == 0) ||
-    subTasks.size == 0
-  )
+ if (
+  subTasks == null ||
+  normalTasks == null ||
+  name == null ||
+  gender == null ||
+  settings == null
+) {
+  return <LoadingAnimation />;
+}
+else {
+  // Combine all tasks into a single array
+  const allTasks = [...normalTasks];
+  
+  // Get the first uncompleted task
+  const currentTask = allTasks.length > 0 ? allTasks[0] : null;
+
+  console.log("Current Task:", currentTask);
+  
+  // Check if all tasks are completed
+  if (!currentTask || subTasks.size == 0) {
     return (
-<LinearGradient
-  colors={BACKGROUND_GRADIENT}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 0, y: 1 }}
-  style={{ flex: 1 }}
->
-
-
-        <SafeAreaView style={{ flex: 1 , marginBottom: 20}}>
-          <StatusBar style="auto"
+      <LinearGradient
+        colors={BACKGROUND_GRADIENT}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ flex: 1 }}
+      >
+        <SafeAreaView style={{ flex: 1, marginBottom: 20 }}>
+          <StatusBar
+            style="auto"
             translucent={true}
             hidden={false}
             backgroundColor={settings.colorForBackground}
-
           />
           <ScrollView
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -214,155 +209,100 @@ useEffect(() => {
               title="Zadaci"
               onLogout={alertFunction}
             />
-            <CelebrationAnimation kidName={kidName} maleKid={maleKid} settings={settings} />
-          </ScrollView>
-        </SafeAreaView>
-      </LinearGradient>
-    );
-  else {
-    return (
-<LinearGradient
-  colors={BACKGROUND_GRADIENT}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 0, y: 1 }}
-  style={{ flex: 1 }}
->
-        <SafeAreaView
-          style={{ flex: 1}}
-        >
-            <UnifiedHeader
-              settings={settings}
-              title="Zadaci"
-              onLogout={alertFunction}
-            />
-          
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            contentContainerStyle={{
-              paddingBottom: 100
-            }}
-          ><WelcomeMessage name={kidName} male={maleKid} settings={settings} />
-            {priorityTasks.length != 0 ? (
-              <>
-                <Text
-                  style={[
-                    styles.title,
-                    {
-                      fontSize: settings.fontSize + 2,
-                      fontFamily: settings.font,
-                    },
-                  ]}
-                >
-                  Prioritetni zadaci
-                </Text>
-                <View style={styles.tasks}>
-                  <ScrollView
-                    horizontal
-                    decelerationRate={0.9}
-                    snapToInterval={305} //your element width
-                    snapToAlignment={"start"}
-                    showsHorizontalScrollIndicator={false}
-                  >
-                    {priorityTasks.map((task) => {
-                      if (!subTasks.get(task.id)) return null;
-                      return (
-                        <View key={task.id} style={{ marginBottom: 40 }}>
-                          <TouchableOpacity
-                            activeOpacity={0.6}
-                            style={styles.taskPressable}
-                            onPress={() => handleTaskPress(task)}
-                          >
-                            <Task
-                              task={task}
-                              settings={settings}
-                              taskColor={settings.colorOfPriorityTask}
-                              subTasks={subTasks.get(task.id)}
-                              updateTaskScreen={fetchData}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              </>
-            ) : undefined}
-
-            {normalTasks.length != 0 ? (
-              <>
-                <Text
-                  style={[
-                    styles.title,
-                    {
-                      fontSize: settings.fontSize + 2,
-                      fontFamily: settings.font,
-                    },
-                  ]}
-                >
-                  Manje prioritetni zadaci
-                </Text>
-                <View style={styles.tasks}>
-                  <ScrollView
-                    horizontal
-                    decelerationRate={0.9}
-                    snapToInterval={305} //your element width
-                    snapToAlignment={"start"}
-                    showsHorizontalScrollIndicator={false}
-                  >
-                    {normalTasks.map((task) => {
-                      if (!subTasks.get(task.id)) return null;
-                      return (
-                        <View key={task.id} style={{ marginBottom: 40 }}>
-                          <TouchableOpacity
-                            activeOpacity={0.6}
-                            style={styles.taskPressable}
-                            onPress={() => {
-                              handleTaskPress(task);
-                            }}
-                          >
-                            <Task
-                              task={task}
-                              settings={settings}
-                              taskColor={settings.colorOfNormalTask}
-                              subTasks={subTasks.get(task.id)}
-                              updateTaskScreen={fetchData}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              </>
-            ) : undefined}
+            <CelebrationAnimation kidName={name} maleKid={gender} settings={settings} />
           </ScrollView>
         </SafeAreaView>
       </LinearGradient>
     );
   }
+  
+  
+  return (
+    <LinearGradient
+      colors={BACKGROUND_GRADIENT}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={{ flex: 1 }}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <UnifiedHeader
+          settings={settings}
+          title="Zadaci"
+          onLogout={alertFunction}
+        />
+        
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={{
+            paddingBottom: 100
+          }}
+        >
+          <WelcomeMessage name={name} male={gender} settings={settings} />
+          
+          <View style={[styles.tasks, { alignItems: 'center' }]}>
+            {subTasks.get(currentTask.id) && (
+              <TouchableOpacity
+                activeOpacity={0.6}
+                style={styles.taskPressable}
+                onPress={() => handleTaskPress(currentTask)}
+              >
+                <Task
+                  task={currentTask}
+                  settings={settings}
+                  taskColor={settings.colorOfNormalTask}
+                  subTasks={subTasks.get(currentTask.id)}
+                  updateTaskScreen={fetchData}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {allTasks.length > 1 && (
+            <Text
+              style={[
+                styles.title,
+                {
+                  fontSize: settings.fontSize,
+                  fontFamily: settings.font,
+                  textAlign: 'center',
+                  opacity: 0.7,
+                  marginTop: 20,
+                },
+              ]}
+            >
+              Preostalo zadataka: {allTasks.length - 1}
+            </Text>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+};
 }
 
 const styles = StyleSheet.create({
   tasks: {
     paddingBottom: 20,
-    marginTop: 10,
+    marginTop: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   taskPressable: {
-    width: 280,
-    marginLeft: 25,
-    marginRight: 10,
+    width: '100%',
+    maxWidth: 380,
     backgroundColor: "#fff",
-    borderRadius: 20,
-    elevation: 3,
+    borderRadius: 24,
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginBottom: 40, // ili više
-
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    marginBottom: 30,
+    overflow: 'hidden',
   },
   congratulationBox: {
     flex: 1,
