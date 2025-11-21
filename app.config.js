@@ -92,7 +92,10 @@ export default function () {
         }
       ],
       "expo-font",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-web-browser"
+      ]
     ],
     extra: {
       eas: {

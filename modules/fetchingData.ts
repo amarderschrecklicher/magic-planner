@@ -69,6 +69,7 @@ async function getJwt(): Promise<string | null> {
 }
 
 export async function apiFetch(input: string, init: RequestInit = {}) {
+
   let access = await getJwt();
   const headers = {
     "Content-Type": "application/json",
@@ -86,6 +87,7 @@ export async function apiFetch(input: string, init: RequestInit = {}) {
   // Attempt refresh once
   const phoneLoginString = await AsyncStorage.getItem("phoneLoginString");
   const newAccess = await getMobileTokens(phoneLoginString || "");
+
   if (!newAccess) return res; // still 401; let caller handle logout
 
   // Retry original with new token
@@ -102,7 +104,7 @@ export async function getMobileTokens(phoneLoginString: string) {
   console.log("Fetching mobile tokens for phoneLoginString:", phoneLoginString);
 
   // ✅ Wait until a real Expo token is available
-  //const notificationToken = await registerForPushNotificationsAsync();
+  const notificationToken = await registerForPushNotificationsAsync();
   //console.log("Notification token:", notificationToken);
   //console.log("Device model:", Device.modelName);
   const response = await fetch(`${API_BASE_URL}/api/v1/token/mobile`, {
@@ -112,7 +114,7 @@ export async function getMobileTokens(phoneLoginString: string) {
     },
     body: JSON.stringify({
       phoneLoginString: phoneLoginString,
-      notificationToken: "notificationToken",
+      notificationToken: notificationToken,
       modelId: Device.modelName,
     }),
   });
@@ -134,7 +136,7 @@ export async function getMobileTokens(phoneLoginString: string) {
     "phoneLoginString",
     decodePhoneLoginString(child.jwtToken) || ""
   );
-  await AsyncStorage.setItem("expo_token", "notificationToken");
+  await AsyncStorage.setItem("expo_token", notificationToken);
 
   return child;
 }
