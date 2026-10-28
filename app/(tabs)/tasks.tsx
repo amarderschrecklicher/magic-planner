@@ -64,7 +64,7 @@ function TasksScreen() {
     return () => {
       
     };
-  }, [])
+  }, [accountID])
 );
 
 useEffect(() => {
@@ -115,14 +115,14 @@ useEffect(() => {
     }
   }
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    fetchData(true);
-
-    setTimeout(() => {
+    try {
+      await fetchData(true);
+    } finally {
       setRefreshing(false);
-    }, 1000);
-  }, []);
+    }
+  }, [accountID]);
 
   const alertFunction = () => {
     Alert.alert(

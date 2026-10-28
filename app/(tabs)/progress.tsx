@@ -6,12 +6,13 @@ import {
   ScrollView,
   RefreshControl,
   SafeAreaView,
+  TouchableOpacity,
 } from "react-native";
 import Task from "../../components/Task";
 import LoadingAnimation from "../../components/LoadingAnimation";
 import { fetchSettings, fetchSubTasks, TaskData, SubTaskData, SettingsData, fetchDoneTasks } from "../../modules/fetchingData";
 import { StatusBar } from "expo-status-bar";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useUser } from "@/modules/UserContext";
 import { LinearGradient } from "expo-linear-gradient";
 import UnifiedHeader from "@/components/UnifiedHeader";
@@ -26,13 +27,13 @@ function ProgressScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      console.log("TasksScreen focused, fetching data...");
+      console.log("ProgressScreen focused, fetching data...");
       fetchData(false);
 
       return () => {
 
       };
-    }, [])
+    }, [accountID])
   );
 
   async function fetchData(refresh: boolean) {
@@ -60,20 +61,24 @@ function ProgressScreen() {
     }
   }
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchData(true);
-    setTimeout(() => {
+    try {
+      await fetchData(true);
+    } finally {
       setRefreshing(false);
-    }, 1000);
-  }, []);
+    }
+  }, [accountID]);
 
-  const handleTaskPress = (task: any) => {
-    if (subTasks)
-      navigation.navigate("SubTasks", {
-        task: task,
-        settings: settings,
-        subTasks: subTasks.get(task.id),
+  const handleTaskPress = (task: TaskData) => {
+    if (subTasks && settings)
+      router.push({
+        pathname: "subtasks",
+        params: {
+          task: JSON.stringify(task),
+          settings: JSON.stringify(settings),
+          subTasks: JSON.stringify(subTasks.get(task.id) ?? []),
+        },
       });
   };
 
@@ -102,13 +107,26 @@ function ProgressScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
         >
+          {finishedTasks.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Još nema završenih zadataka</Text>
+              <Text style={styles.emptyText}>
+                Kada završiš zadatak, ovdje ćeš vidjeti svoj napredak.
+              </Text>
+            </View>
+          )}
           {finishedTasks.map((task) => {
 
             const subTaskList = subTasks.get(task.id);
             if (!subTaskList) return null;
 
             return (
-              <View key={task.id} style={styles.taskCard}>
+              <TouchableOpacity
+                key={task.id}
+                activeOpacity={0.7}
+                style={styles.taskCard}
+                onPress={() => handleTaskPress(task)}
+              >
                 <Task
                   task={task}
                   settings={settings}
@@ -116,7 +134,7 @@ function ProgressScreen() {
                   subTasks={subTaskList}
                   updateTaskScreen={fetchData}
                 />
-              </View>
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
@@ -144,6 +162,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 4,
     elevation: 3,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1a1a1a",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
   },
 });
 
