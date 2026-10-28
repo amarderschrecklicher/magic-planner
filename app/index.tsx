@@ -19,14 +19,17 @@ import { useUser } from "@/modules/UserContext";
       await fetchFonts();
       console.log("Fonts loaded successfully");
       try {
-        const account = await AsyncStorage.getItem("account");
+        const id = await AsyncStorage.getItem("id");
+        const name = await AsyncStorage.getItem("name");
         const email = await AsyncStorage.getItem("email");
+        const gender = await AsyncStorage.getItem("gender") === "true";
         const password = await AsyncStorage.getItem("password");
 
-        if (account && email && password) {
-          console.log("Account found, logging in...",account, " ", email);
+        if (id && email && name && password) {
+          console.log("Account found, logging in...",id, " ", email," ", gender," ", name);
           await signInWithEmailAndPassword(auth, email, password);
-          setUser(account, email);
+
+          setUser(id,name,gender, email);
           router.replace("/(tabs)/tasks");
         } else {
           setReady(true);

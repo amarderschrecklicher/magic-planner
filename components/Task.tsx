@@ -1,29 +1,17 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Alert,
-  Modal,
-  TouchableOpacity,
-  Image,
 } from "react-native";
-import Checkbox from "expo-checkbox";
-import { CameraView } from "expo-camera";
-import { saveMaterial } from "../modules/fetchingData";
-import { storage } from "../modules/firebase";
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import {
   SettingsData,
   SubTaskData,
   TaskData,
-  updateFinishedSubTasks,
   updateFinishedTask,
 } from "../modules/fetchingData";
-import * as ImageManipulator from "expo-image-manipulator";
 import * as Progress from "react-native-progress";
 import { LinearGradient } from "expo-linear-gradient";
-import color from "color";
 
 export default function Task({
   task,
@@ -44,10 +32,19 @@ export default function Task({
   function countFinishedSubTasks() {
     let counter = 0;
     let total = 0;
+    
+    if (!subTasks || subTasks.length === 0) {
+      setFinishedSubTasks(0);
+      setNumberOfSubTasks(0);
+      return;
+    }
+    
     subTasks.forEach((subTask) => {
       if (subTask.done) counter++;
       total++;
     });
+    
+    
     if (counter === total && !task.done) {
       updateTaskScreen();
       updateFinishedTask(task.id);
@@ -58,22 +55,68 @@ export default function Task({
 
   useEffect(() => {
     countFinishedSubTasks();
-  }, [subTasks]);
-
+  }, [subTasks, task.done]);
+  
   return (
     <>
-      <View style={[styles.container, { backgroundColor: "#f0f6fc" }]}>        
-        <Text
-          style={[styles.taskName, {
-            color: settings.colorForFont,
-            fontFamily: settings.font,
-          }]}
-        >
-          {task.taskName}
-        </Text>
+      <LinearGradient
+        colors={['#ffffff', '#f8fbff']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.container}
+      >        
+        <View style={styles.headerSection}>
+          <Text
+            style={[styles.taskName, {
+              color: settings.colorForFont,
+              fontFamily: settings.font,
+              fontSize: settings.fontSize + 6,
+            }]}
+          >
+            {task.taskName}
+          </Text>
+        </View>
+
+        <View style={styles.middleSection}>
+          {!task.done && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressHeader}>
+                <Text
+                  style={[styles.progressLabel, {
+                    fontSize: settings.fontSize,
+                    fontFamily: settings.font,
+                  }]}
+                >
+                  Napredak
+                </Text>
+                <Text
+                  style={[styles.progressCount, {
+                    fontSize: settings.fontSize + 2,
+                    fontFamily: settings.font,
+                  }]}
+                >
+                  {finishedSubTasks}/{numberOfSubTasks}
+                </Text>
+              </View>
+              <Progress.Bar
+                key={`${task.id}-${finishedSubTasks}-${numberOfSubTasks}`}
+                progress={finishedSubTasks / numberOfSubTasks}
+                width={null}
+                height={18}
+                color={settings.colorForProgress}
+                borderColor="transparent"
+                borderWidth={0}
+                borderRadius={12}
+                unfilledColor="#e8f0f8"
+                animated={true}
+                animationType="timing"
+              />
+            </View>
+          )}
+        </View>
 
         <View style={[styles.timeContainer, {
-          backgroundColor: !task.overDo ? "#f44336" : settings.colorOfPriorityTask,
+          backgroundColor: !task.overDo && !task.done ? "#f44336" : taskColor,
         }]}
         >
           <Text
@@ -83,45 +126,22 @@ export default function Task({
             }]}
           >
             {task.done
-              ? "Završen:"
+              ? "✓ Završen"
               : !task.overDo
               ? "Rok prošao"
-              : "Rok izvršavanja:"}
+              : "📅 Rok izvršavanja"}
           </Text>
 
           <Text
             style={[styles.timeValue, {
-              fontSize: settings.fontSize,
+              fontSize: settings.fontSize + 2,
               fontFamily: settings.font,
             }]}
           >
-            {task.done ? task.end : !task.overDo ? "" : task.dueTime}
+            {task.done ? task.end  : task.dueTime}
           </Text>
         </View>
-      </View>
-
-      {!task.done && (
-        <View style={styles.progressContainer}>
-          <Progress.Bar
-            progress={finishedSubTasks / numberOfSubTasks}
-            width={null}
-            height={14}
-            color={settings.colorForProgress}
-            borderColor="#ccc"
-            borderWidth={1}
-            borderRadius={10}
-            unfilledColor="#eaeaea"
-          />
-          <Text
-            style={[styles.progressText, {
-              fontSize: settings.fontSize - 1,
-              fontFamily: settings.font,
-            }]}
-          >
-            {finishedSubTasks} od {numberOfSubTasks} završeno
-          </Text>
-        </View>
-      )}
+      </LinearGradient>
     </>
   );
 }
@@ -129,49 +149,79 @@ export default function Task({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    borderRadius: 18,
+    padding: 28,
+    borderRadius: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 6,
-    minHeight: 180,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 8,
+    minHeight: 320,
     justifyContent: "space-between",
-    overflow: "visible",
+  },
+  headerSection: {
+    alignItems: "center",
+    marginBottom: 10,
   },
   taskName: {
-    fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
+    lineHeight: 36,
   },
-  timeContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+  middleSection: {
+    flex: 1,
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  progressContainer: {
+    backgroundColor: "#ffffff",
+    padding: 20,
+    borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  progressLabel: {
+    color: "#666",
+    fontWeight: "600",
+  },
+  progressCount: {
+    fontWeight: "bold",
+    color: "#333",
+  },
+  progressPercentage: {
+    marginTop: 10,
+    color: "#666",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  timeContainer: {
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
     alignItems: "center",
   },
   timeLabel: {
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#fff",
-    marginBottom: 6,
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   timeValue: {
     color: "#fff",
-  },
-  progressContainer: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  progressText: {
-    marginTop: 8,
-    color: "#333",
-    textAlign: "center",
+    fontWeight: "600",
   },
 });

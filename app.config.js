@@ -27,9 +27,9 @@ const withFixFirebaseMetaData = (config) => {
 
 export default function () {
   return withFixFirebaseMetaData({
-    name: "magic-planner",
+    name: "EMA",
     slug: "assitify",
-    version: "1.0.0",
+    version: "2.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "myapp",
@@ -46,7 +46,7 @@ export default function () {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/react-logo.png",
+        foregroundImage: "./assets/images/logoapp.png",
         backgroundColor: "#ffffff"
       },
       permissions: [
@@ -54,6 +54,7 @@ export default function () {
         "android.permission.RECORD_AUDIO"
       ],
       package: "com.amartc.assitify",
+      versionCode: 7,
       googleServicesFile: "./google-services.json",
       statusBar: {
         translucent: true
@@ -90,7 +91,9 @@ export default function () {
       ],
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      [
+        "expo-web-browser"
+      ]
     ],
     extra: {
       eas: {

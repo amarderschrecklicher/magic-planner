@@ -1,0 +1,22 @@
+# Files sent to EAS Build (mirrors .gitignore, plus editor/IDE folders that
+# break archive cleanup on Windows because of cloud "pinned" attributes).
+.git
+node_modules
+.expo
+.idea
+.vscode
+dist
+web-build
+
+# signing material / service account keys must never leave this machine
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+ema-emplyomentmonitoringagenda-*.json
+
+npm-debug.*
+.DS_Store
+*.orig.*

@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useState } from "react";
 import {
   View,
   StyleSheet,
-  Dimensions,
   Text,
   TouchableOpacity,
   SafeAreaView,
@@ -27,7 +26,7 @@ function ScanQRCodeScreen() {
 
   const storeData = async (child:any) => {
     try {
-      setUser(child.id.toString(), child.email);
+      setUser(child.id.toString(),child.name, child.email);
       await signInWithEmailAndPassword(auth, child.email, child.password);
       setAuthenticated(true);
       console.log("Login success");
@@ -41,9 +40,9 @@ function ScanQRCodeScreen() {
     setScanned(true);
 
         try {
+          
           const response = await getMobileTokens(data);
           await storeData(response);
-
 
         } catch (error) {
           console.error(error);

@@ -56,7 +56,7 @@ export default function TabLayout() {
         >
           <Tabs.Screen name="tasks" options={{ title: "Zadaci" }} />
           <Tabs.Screen name="progress" options={{ title: "Napredak" }} />
-          <Tabs.Screen name="instructions" options={{ title: "Materijali" }} />
+          <Tabs.Screen name="instructions" options={{ title: "Upute" }} />
         </Tabs>
 
         {/* Global SideButtons – pojaviće se na svim tabovima */}
